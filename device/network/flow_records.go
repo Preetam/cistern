@@ -1,4 +1,4 @@
-package device
+package network
 
 import (
 	"fmt"

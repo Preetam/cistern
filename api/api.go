@@ -7,6 +7,7 @@ import (
 
 	"github.com/VividCortex/siesta"
 
+	"github.com/PreetamJinka/cistern/api/context"
 	"github.com/PreetamJinka/cistern/device"
 	"github.com/PreetamJinka/cistern/state/flows"
 	"github.com/PreetamJinka/cistern/state/series"
@@ -18,7 +19,9 @@ type APIServer struct {
 	seriesEngine   *series.Engine
 }
 
-func NewAPIServer(address string, deviceRegistry *device.Registry, seriesEngine *series.Engine) *APIServer {
+func NewAPIServer(address string,
+	deviceRegistry *device.Registry,
+	seriesEngine *series.Engine) *APIServer {
 	return &APIServer{
 		addr:           address,
 		deviceRegistry: deviceRegistry,
@@ -35,8 +38,8 @@ func (s *APIServer) Run() {
 	})
 
 	service.AddPost(func(c siesta.Context, w http.ResponseWriter, r *http.Request, q func()) {
-		resp := c.Get(responseKey)
-		err, _ := c.Get(errorKey).(string)
+		resp := c.Get(context.Response)
+		err, _ := c.Get(context.Error).(string)
 
 		if resp == nil && err == "" {
 			return
@@ -50,7 +53,7 @@ func (s *APIServer) Run() {
 	})
 
 	service.Route("GET", "/", "Default page", func(c siesta.Context, w http.ResponseWriter, r *http.Request) {
-		c.Set(responseKey, "Welcome to the Cistern API!")
+		c.Set(context.Response, "Welcome to the Cistern API!")
 	})
 
 	service.Route("GET", "/devices", "Lists sources", func(c siesta.Context, w http.ResponseWriter, r *http.Request) {
@@ -68,7 +71,7 @@ func (s *APIServer) Run() {
 			})
 		}
 
-		c.Set(responseKey, devices)
+		c.Set(context.Response, devices)
 	})
 
 	service.Route("GET", "/devices/:device/metrics",
@@ -78,18 +81,18 @@ func (s *APIServer) Run() {
 			device := params.String("device", "", "Device name")
 			err := params.Parse(r.Form)
 			if err != nil {
-				c.Set(errorKey, err.Error())
+				c.Set(context.Error, err.Error())
 				return
 			}
 
 			address := net.ParseIP(*device)
 			dev, present := s.deviceRegistry.Lookup(address)
 			if !present {
-				c.Set(errorKey, "device not found")
+				c.Set(context.Error, "device not found")
 				return
 			}
 
-			c.Set(responseKey, dev.Metrics())
+			c.Set(context.Response, dev.Metrics())
 		})
 
 	service.Route("GET", "/devices/:device/flows",
@@ -99,14 +102,14 @@ func (s *APIServer) Run() {
 			device := params.String("device", "", "Device name")
 			err := params.Parse(r.Form)
 			if err != nil {
-				c.Set(errorKey, err.Error())
+				c.Set(context.Error, err.Error())
 				return
 			}
 
 			address := net.ParseIP(*device)
 			dev, present := s.deviceRegistry.Lookup(address)
 			if !present {
-				c.Set(errorKey, "device not found")
+				c.Set(context.Error, "device not found")
 				return
 			}
 
@@ -117,7 +120,7 @@ func (s *APIServer) Run() {
 
 			topTalkers := dev.TopTalkers()
 			if topTalkers == nil {
-				c.Set(errorKey, "No active flows")
+				c.Set(context.Error, "No active flows")
 				return
 			}
 
@@ -126,7 +129,7 @@ func (s *APIServer) Run() {
 				ByPackets: topTalkers.ByPackets(),
 			}
 
-			c.Set(responseKey, resp)
+			c.Set(context.Response, resp)
 		})
 
 	service.Route("OPTIONS", "/series/query",

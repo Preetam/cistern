@@ -1,3 +1,4 @@
+// Cistern is a flow collector.
 package main
 
 import (
@@ -22,6 +23,7 @@ var (
 	sflowListenAddr = ":6343"
 	apiListenAddr   = ":8080"
 	configFile      = "/opt/cistern/config.json"
+	seriesDataDir   = "/opt/cistern/series"
 )
 
 func main() {
@@ -32,6 +34,8 @@ func main() {
 	flag.StringVar(&sflowListenAddr, "sflow-listen-addr", sflowListenAddr, "listen address for sFlow datagrams")
 	flag.StringVar(&apiListenAddr, "api-listen-addr", apiListenAddr, "listen address for HTTP API server")
 	flag.StringVar(&configFile, "config", configFile, "configuration file")
+	flag.StringVar(&seriesDataDir, "series-data-dir", seriesDataDir, "directory to store time series data")
+
 	showVersion := flag.Bool("version", false, "Show version")
 	showLicense := flag.Bool("license", false, "Show software licenses")
 	showConfig := flag.Bool("show-config", false, "Show loaded config file")
@@ -68,7 +72,7 @@ func main() {
 		}
 	}
 
-	engine, err := series.NewEngine("/tmp/cistern/catena")
+	engine, err := series.NewEngine(seriesDataDir)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -122,7 +126,7 @@ func main() {
 	log.Printf("listening for sFlow datagrams on %s", sflowListenAddr)
 
 	// start a decoder
-	sflowDecoder := decode.NewSflowDecoder(c, 16)
+	sflowDecoder := decode.NewSFlowDecoder(c, 16)
 	sflowDecoder.Run()
 
 	go func() {

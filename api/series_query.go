@@ -6,8 +6,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/PreetamJinka/catena"
 	"github.com/VividCortex/siesta"
+
+	"github.com/PreetamJinka/catena"
+
+	"github.com/PreetamJinka/cistern/api/context"
 )
 
 // A querySeries is an ordered set of points
@@ -48,7 +51,7 @@ func (s *APIServer) querySeriesRoute() func(siesta.Context, http.ResponseWriter,
 		pointWidth := params.Int64("pointWidth", 1, "Number of points to average together")
 		err := params.Parse(r.Form)
 		if err != nil {
-			c.Set(errorKey, err.Error())
+			c.Set(context.Error, err.Error())
 			return
 		}
 
@@ -57,7 +60,7 @@ func (s *APIServer) querySeriesRoute() func(siesta.Context, http.ResponseWriter,
 		dec := json.NewDecoder(r.Body)
 		err = dec.Decode(&descs)
 		if err != nil {
-			c.Set(errorKey, err.Error())
+			c.Set(context.Error, err.Error())
 			return
 		}
 
@@ -141,6 +144,6 @@ func (s *APIServer) querySeriesRoute() func(siesta.Context, http.ResponseWriter,
 			resp.Series = append(resp.Series, s)
 		}
 
-		c.Set(responseKey, resp)
+		c.Set(context.Response, resp)
 	}
 }
