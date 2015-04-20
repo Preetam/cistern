@@ -11,7 +11,6 @@ import (
 
 // A Registry is a device registry.
 type Registry struct {
-
 	// devices is a map from IP address (max 16 bytes) string to Device.
 	devices map[[16]byte]*Device
 
