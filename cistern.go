@@ -6,16 +6,12 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net"
 	"os"
-	"runtime"
 
 	"github.com/PreetamJinka/udpchan"
 
-	"github.com/PreetamJinka/cistern/api"
 	"github.com/PreetamJinka/cistern/config"
 	"github.com/PreetamJinka/cistern/decode"
-	"github.com/PreetamJinka/cistern/device"
 	"github.com/PreetamJinka/cistern/state/series"
 )
 
@@ -27,9 +23,6 @@ var (
 )
 
 func main() {
-
-	runtime.GOMAXPROCS(runtime.NumCPU())
-
 	// Flags
 	flag.StringVar(&sflowListenAddr, "sflow-listen-addr", sflowListenAddr, "listen address for sFlow datagrams")
 	flag.StringVar(&apiListenAddr, "api-listen-addr", apiListenAddr, "listen address for HTTP API server")
@@ -40,8 +33,6 @@ func main() {
 	showLicense := flag.Bool("license", false, "Show software licenses")
 	showConfig := flag.Bool("show-config", false, "Show loaded config file")
 	flag.Parse()
-
-	log.SetFlags(log.Lshortfile | log.Lmicroseconds)
 
 	if *showVersion {
 		fmt.Println("Cistern version", version)
@@ -59,88 +50,41 @@ func main() {
 
 	conf, err := config.Load(configFile)
 	if err != nil {
-		log.Printf("Could not load configuration: %v", err)
+		log.Printf("✗ Could not load configuration: %v", err)
 	}
 
 	// Log the loaded config
 	confBytes, err := json.MarshalIndent(conf, "  ", "  ")
 	if err != nil {
-		log.Println("Could not log config:", err)
+		log.Println("✗ Could not log config:", err)
 	} else {
 		if *showConfig {
 			log.Println("\n  " + string(confBytes))
 		}
+
+		log.Println("✓ Successfully loaded configuration")
 	}
 
+	log.Printf("Starting series engine using %s", seriesDataDir)
 	engine, err := series.NewEngine(seriesDataDir)
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Println("✓ Successfully started series engine")
 
-	registry, err := device.NewRegistry(engine.Inbound)
-	if err != nil {
-		log.Fatal(err)
-	}
+	var _ = engine
 
-	for _, dev := range conf.Devices {
-
-		ip := net.ParseIP(dev.IP)
-		// Add a device to the registry
-		registryDev := registry.LookupOrAdd(ip)
-
-		if dev.SNMP != nil {
-			// We have an SNMP config
-			addr := ip.String()
-			if ip.To4() == nil {
-				// IPv6 addresses need to be surrounded
-				// with `[` and `]`.
-				addr = "[" + addr + "]"
-			}
-
-			port := 161
-
-			if dev.SNMP.Port != 0 {
-				port = dev.SNMP.Port
-			}
-
-			addr = fmt.Sprintf("%s:%d", addr, port)
-
-			err = registry.SetDeviceSNMP(ip, addr, dev.SNMP.User, dev.SNMP.AuthPassphrase, dev.SNMP.PrivPassphrase)
-			if err == nil {
-				log.Println("Successfully created SNMP session with", addr)
-				log.Println("Starting device discovery")
-
-				registryDev.Discover()
-			} else {
-				log.Printf("SNMP session creation failed for %v: %v", addr, err)
-			}
-		}
-	}
-
-	// start listening
+	log.Printf("Attempting to listen on %s for sFlow datagrams", sflowListenAddr)
 	c, listenErr := udpchan.Listen(sflowListenAddr, nil)
 	if listenErr != nil {
-		log.Fatalf("failed to start listening: [%s]", listenErr)
+		log.Fatalf("✗ Failed to start listening: %s", listenErr)
 	}
 
-	log.Printf("listening for sFlow datagrams on %s", sflowListenAddr)
+	log.Printf("✓ Listening for sFlow datagrams on %s", sflowListenAddr)
 
 	// start a decoder
 	sflowDecoder := decode.NewSFlowDecoder(c, 16)
 	sflowDecoder.Run()
-
-	go func() {
-		for datagram := range sflowDecoder.Outbound() {
-			source := datagram.IpAddress
-
-			registryDev := registry.LookupOrAdd(source)
-			registryDev.Inbound <- datagram
-		}
-	}()
-
-	apiServer := api.NewAPIServer(apiListenAddr, registry, engine)
-	apiServer.Run()
-	log.Printf("API server started on %s", apiListenAddr)
 
 	// make sure we don't exit
 	<-make(chan struct{})
