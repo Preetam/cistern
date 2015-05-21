@@ -46,7 +46,7 @@ func main() {
 
 	log.Printf("Cistern version %s starting", version)
 
-	log.Printf("Attempting to load configuration file at %s", configFile)
+	log.Printf("  Attempting to load configuration file at %s", configFile)
 
 	conf, err := config.Load(configFile)
 	if err != nil {
@@ -65,7 +65,7 @@ func main() {
 		log.Println("✓ Successfully loaded configuration")
 	}
 
-	log.Printf("Starting series engine using %s", seriesDataDir)
+	log.Printf("  Starting series engine using %s", seriesDataDir)
 	engine, err := series.NewEngine(seriesDataDir)
 	if err != nil {
 		log.Fatal(err)
@@ -74,7 +74,7 @@ func main() {
 
 	var _ = engine
 
-	log.Printf("Attempting to listen on %s for sFlow datagrams", sflowListenAddr)
+	log.Printf("  Attempting to listen on %s for sFlow datagrams", sflowListenAddr)
 	c, listenErr := udpchan.Listen(sflowListenAddr, nil)
 	if listenErr != nil {
 		log.Fatalf("✗ Failed to start listening: %s", listenErr)
