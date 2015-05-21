@@ -9,8 +9,15 @@ import (
 const ClassName = "sflow"
 
 type Class struct {
-	destinationAddress net.IP
-	inbound            chan sflow.Datagram
+	sourceAddress net.IP
+	inbound       chan *sflow.Datagram
+}
+
+func NewClass(sourceAddress net.IP, inbound chan *sflow.Datagram) *Class {
+	return &Class{
+		sourceAddress: sourceAddress,
+		inbound:       inbound,
+	}
 }
 
 func (c *Class) Name() string {

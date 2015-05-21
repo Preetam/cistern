@@ -26,6 +26,8 @@ func NewDecoder(listenAddr string, outbound chan *sflow.Datagram) (*Decoder, err
 		inbound:    inbound,
 	}
 
+	go d.run()
+
 	return d, nil
 }
 

@@ -9,6 +9,8 @@ import (
 	"os"
 
 	"github.com/PreetamJinka/cistern/config"
+	"github.com/PreetamJinka/cistern/device"
+	"github.com/PreetamJinka/cistern/net"
 	"github.com/PreetamJinka/cistern/state/series"
 )
 
@@ -70,6 +72,13 @@ func main() {
 	log.Println("✓ Successfully started series engine")
 
 	var _ = engine
+
+	registry := device.NewRegistry()
+	_, err = net.NewService(net.DefaultConfig, registry)
+	if err != nil {
+		log.Fatalf("✗ failed to start network service: %v", err)
+	}
+	log.Println("✓ Successfully started network service")
 
 	// make sure we don't exit
 	<-make(chan struct{})

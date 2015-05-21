@@ -8,6 +8,7 @@ import (
 
 import (
 	"net"
+	"sync"
 )
 
 var (
@@ -15,6 +16,8 @@ var (
 )
 
 type Device struct {
+	sync.Mutex
+
 	hostname string
 	address  net.IP
 
@@ -28,4 +31,9 @@ func (d *Device) RegisterClass(c class.Class) error {
 
 	d.classes[c.Name()] = c
 	return nil
+}
+
+func (d *Device) HasClass(classname string) bool {
+	_, present := d.classes[classname]
+	return present
 }
