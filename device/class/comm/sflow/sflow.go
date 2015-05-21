@@ -1,9 +1,9 @@
 package sflow
 
 import (
-	"github.com/PreetamJinka/sflow"
-
 	"net"
+
+	"github.com/PreetamJinka/sflow"
 )
 
 type Class struct {

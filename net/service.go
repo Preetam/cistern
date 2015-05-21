@@ -21,7 +21,13 @@ type Service struct {
 func NewService(conf Config) (*Service, error) {
 	// TODO: use config
 
-	return &Service{
+	s := &Service{
 		lock: sync.Mutex{},
-	}, nil
+	}
+
+	return s, nil
+}
+
+func (s *Service) dispatchSflowDatagrams() {
+	// TODO
 }

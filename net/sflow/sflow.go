@@ -1,10 +1,10 @@
 package sflow
 
 import (
+	"bytes"
+
 	"github.com/PreetamJinka/sflow"
 	"github.com/PreetamJinka/udpchan"
-
-	"bytes"
 )
 
 // Decoder decodes sFlow datagrams received over UDP.
@@ -39,7 +39,12 @@ func (d *Decoder) run() {
 
 		dgram, err := datagramDecoder.Decode()
 		if err == nil {
-			d.outbound <- dgram
+			select {
+			case d.outbound <- dgram:
+
+			default:
+				// Drop.
+			}
 		}
 	}
 }
