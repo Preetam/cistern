@@ -8,10 +8,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/PreetamJinka/udpchan"
-
 	"github.com/PreetamJinka/cistern/config"
-	"github.com/PreetamJinka/cistern/decode"
 	"github.com/PreetamJinka/cistern/state/series"
 )
 
@@ -73,18 +70,6 @@ func main() {
 	log.Println("✓ Successfully started series engine")
 
 	var _ = engine
-
-	log.Printf("  Attempting to listen on %s for sFlow datagrams", sflowListenAddr)
-	c, listenErr := udpchan.Listen(sflowListenAddr, nil)
-	if listenErr != nil {
-		log.Fatalf("✗ Failed to start listening: %s", listenErr)
-	}
-
-	log.Printf("✓ Listening for sFlow datagrams on %s", sflowListenAddr)
-
-	// start a decoder
-	sflowDecoder := decode.NewSFlowDecoder(c, 16)
-	sflowDecoder.Run()
 
 	// make sure we don't exit
 	<-make(chan struct{})
