@@ -74,7 +74,7 @@ func (s *Service) dispatchSflowDatagrams() {
 		if !dev.HasClass("sflow") {
 			log.Println(dev, "needs class \"sflow\".")
 			c := make(chan *sflowProto.Datagram)
-			dev.RegisterClass(commSflow.NewClass(dgram.IpAddress, c))
+			dev.RegisterClass(commSflow.NewClass(dgram.IpAddress, c, dev.Messages()))
 			s.deviceDatagramInbound[dev] = c
 		}
 

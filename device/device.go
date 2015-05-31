@@ -2,13 +2,17 @@ package device
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/PreetamJinka/cistern/device/class"
 )
 
 import (
+	"log"
 	"net"
 	"sync"
+
+	"github.com/PreetamJinka/cistern/message"
 )
 
 var (
@@ -21,7 +25,8 @@ type Device struct {
 	hostname string
 	address  net.IP
 
-	classes map[string]class.Class
+	classes  map[string]class.Class
+	messages chan *message.Message
 }
 
 func (d *Device) RegisterClass(c class.Class) error {
@@ -36,4 +41,22 @@ func (d *Device) RegisterClass(c class.Class) error {
 func (d *Device) HasClass(classname string) bool {
 	_, present := d.classes[classname]
 	return present
+}
+
+func (d *Device) Messages() chan *message.Message {
+	return d.messages
+}
+
+func (d *Device) processMessages() {
+	for m := range d.messages {
+		log.Printf("%v got message: %#+v", d, m)
+	}
+}
+
+func (d *Device) String() string {
+	if d.hostname == "" {
+		return fmt.Sprintf("Device{%v}", d.address)
+	}
+
+	return fmt.Sprintf("Device{%s - %v}", d.hostname, d.address)
 }

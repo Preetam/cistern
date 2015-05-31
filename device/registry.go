@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/PreetamJinka/cistern/device/class"
+	"github.com/PreetamJinka/cistern/message"
 )
 
 var ErrAddressAlreadyRegistered = errors.New("device: address already registered")
@@ -36,7 +37,10 @@ func (r *Registry) RegisterDevice(hostname string, address net.IP) (*Device, err
 		hostname: hostname,
 		address:  address,
 		classes:  map[string]class.Class{},
+		messages: make(chan *message.Message),
 	}
+
+	go d.processMessages()
 
 	r.devices[key] = d
 
