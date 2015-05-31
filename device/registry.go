@@ -1,100 +1,58 @@
 package device
 
 import (
+	"errors"
 	"net"
 	"sync"
 
-	"github.com/PreetamJinka/snmp"
-
-	"github.com/PreetamJinka/cistern/state/series"
+	"github.com/PreetamJinka/cistern/device/class"
+	"github.com/PreetamJinka/cistern/message"
 )
 
-// A Registry is a device registry.
+var ErrAddressAlreadyRegistered = errors.New("device: address already registered")
+
+type mapIP [16]byte
+
 type Registry struct {
-
-	// devices is a map from IP address (max 16 bytes) string to Device.
-	devices map[[16]byte]*Device
-
-	sessionManager *snmp.SessionManager
-
-	outbound chan series.Observation
-
 	sync.Mutex
+
+	devices map[mapIP]*Device
 }
 
-// NewRegistry creates a new device registry.
-func NewRegistry(outbound chan series.Observation) (*Registry, error) {
-	sessionManager, err := snmp.NewSessionManager()
-	if err != nil {
-		return nil, err
-	}
-
+func NewRegistry() *Registry {
 	return &Registry{
-		devices:        map[[16]byte]*Device{},
-		sessionManager: sessionManager,
-		outbound:       outbound,
-	}, nil
+		Mutex:   sync.Mutex{},
+		devices: map[mapIP]*Device{},
+	}
 }
 
-// Devices returns a slice of devices in the registry.
-func (r *Registry) Devices() []*Device {
-	r.Lock()
-	defer r.Unlock()
+func (r *Registry) RegisterDevice(hostname string, address net.IP) (*Device, error) {
+	key := toMapIP(address)
 
-	devices := []*Device{}
-
-	for _, device := range r.devices {
-		devices = append(devices, device)
+	if _, present := r.devices[key]; present {
+		return nil, ErrAddressAlreadyRegistered
 	}
 
-	return devices
-}
-
-// NumDevices returns the number of devices in the registry.
-func (r *Registry) NumDevices() int {
-	return len(r.devices)
-}
-
-func (r *Registry) Lookup(address net.IP) (*Device, bool) {
-	byteAddr := [16]byte{}
-	copy(byteAddr[:], address.To16())
-
-	dev, present := r.devices[byteAddr]
-
-	return dev, present
-}
-
-func (r *Registry) LookupOrAdd(address net.IP) *Device {
-	r.Lock()
-	defer r.Unlock()
-
-	dev, present := r.Lookup(address)
-	if present {
-		return dev
+	d := &Device{
+		hostname: hostname,
+		address:  address,
+		classes:  map[string]class.Class{},
+		messages: make(chan *message.Message),
 	}
 
-	dev = NewDevice(address, r.outbound)
+	go d.processMessages()
 
-	byteAddr := [16]byte{}
-	copy(byteAddr[:], address.To16())
+	r.devices[key] = d
 
-	r.devices[byteAddr] = dev
-	return dev
+	return d, nil
 }
 
-func (r *Registry) SetDeviceSNMP(deviceAddress net.IP, snmpAddr, user, auth, priv string) error {
-	d := r.LookupOrAdd(deviceAddress)
+func (r *Registry) Lookup(address net.IP) *Device {
+	return r.devices[toMapIP(address)]
+}
 
-	sess, err := r.sessionManager.NewSession(snmpAddr, user, auth, priv)
-	if err != nil {
-		return err
-	}
-
-	err = sess.Discover()
-	if err != nil {
-		return err
-	}
-
-	d.snmpSession = sess
-	return nil
+func toMapIP(ip net.IP) mapIP {
+	mIP := mapIP{}
+	copy(mIP[:], ip.To16())
+	return mIP
 }
