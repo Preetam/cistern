@@ -4,8 +4,8 @@ import (
 	"log"
 	"net"
 
-	"github.com/PreetamJinka/cistern/message"
-	"github.com/PreetamJinka/sflow"
+	"github.com/Preetam/cistern/message"
+	"github.com/Preetam/sflow"
 )
 
 const ClassName = "sflow"

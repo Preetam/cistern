@@ -6,11 +6,11 @@ import (
 	"log"
 	"sync"
 
-	sflowProto "github.com/PreetamJinka/sflow"
+	sflowProto "github.com/Preetam/sflow"
 
-	"github.com/PreetamJinka/cistern/device"
-	commSflow "github.com/PreetamJinka/cistern/device/class/comm/sflow"
-	"github.com/PreetamJinka/cistern/net/sflow"
+	"github.com/Preetam/cistern/device"
+	commSflow "github.com/Preetam/cistern/device/class/comm/sflow"
+	"github.com/Preetam/cistern/net/sflow"
 )
 
 type Config struct {

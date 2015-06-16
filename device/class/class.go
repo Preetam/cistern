@@ -1,8 +1,8 @@
 package class
 
 import (
-	"github.com/PreetamJinka/cistern/device/class/comm/sflow"
-	"github.com/PreetamJinka/cistern/message"
+	"github.com/Preetam/cistern/device/class/comm/sflow"
+	"github.com/Preetam/cistern/message"
 )
 
 type Class interface {

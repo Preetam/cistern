@@ -3,8 +3,8 @@ package sflow
 import (
 	"bytes"
 
-	"github.com/PreetamJinka/sflow"
-	"github.com/PreetamJinka/udpchan"
+	"github.com/Preetam/sflow"
+	"github.com/Preetam/udpchan"
 )
 
 // Decoder decodes sFlow datagrams received over UDP.

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/PreetamJinka/cistern/device/class"
+	"github.com/Preetam/cistern/device/class"
 )
 
 import (
@@ -12,7 +12,7 @@ import (
 	"net"
 	"sync"
 
-	"github.com/PreetamJinka/cistern/message"
+	"github.com/Preetam/cistern/message"
 )
 
 var (

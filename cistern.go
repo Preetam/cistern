@@ -8,10 +8,10 @@ import (
 	"log"
 	"os"
 
-	"github.com/PreetamJinka/cistern/config"
-	"github.com/PreetamJinka/cistern/device"
-	"github.com/PreetamJinka/cistern/net"
-	"github.com/PreetamJinka/cistern/state/series"
+	"github.com/Preetam/cistern/config"
+	"github.com/Preetam/cistern/device"
+	"github.com/Preetam/cistern/net"
+	"github.com/Preetam/cistern/state/series"
 )
 
 var (
