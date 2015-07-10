@@ -37,7 +37,7 @@ func (r *Registry) RegisterDevice(hostname string, address net.IP) (*Device, err
 		hostname: hostname,
 		address:  address,
 		classes:  map[string]class.Class{},
-		messages: make(chan *message.Message),
+		messages: make(chan *message.Message, 1),
 	}
 
 	go d.processMessages()

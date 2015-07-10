@@ -3,15 +3,13 @@ package device
 import (
 	"errors"
 	"fmt"
-
-	"github.com/Preetam/cistern/device/class"
-)
-
-import (
 	"log"
 	"net"
 	"sync"
 
+	"github.com/Preetam/cistern/device/class"
+	"github.com/Preetam/cistern/device/class/info/debug"
+	"github.com/Preetam/cistern/device/class/info/host_counters"
 	"github.com/Preetam/cistern/message"
 )
 
@@ -49,7 +47,22 @@ func (d *Device) Messages() chan *message.Message {
 
 func (d *Device) processMessages() {
 	for m := range d.messages {
-		log.Printf("%v got message: %#+v", d, m)
+		if !d.HasClass(m.Class) {
+			log.Printf("  %v does not have class \"%s\" registered", d, m.Class)
+			switch m.Class {
+			case host_counters.ClassName:
+				d.RegisterClass(host_counters.NewClass(d.address, d.messages))
+			case debug.ClassName:
+				d.RegisterClass(debug.NewClass(d.address))
+			default:
+				continue
+			}
+		}
+
+		c := d.classes[m.Class]
+		if collector, ok := c.(class.Collector); ok {
+			collector.InboundMessages() <- m
+		}
 	}
 }
 

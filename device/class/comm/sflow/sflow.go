@@ -1,7 +1,6 @@
 package sflow
 
 import (
-	"log"
 	"net"
 
 	"github.com/Preetam/cistern/message"
@@ -42,16 +41,34 @@ func (c *Class) OutboundMessages() chan *message.Message {
 
 func (c *Class) generateMessages() {
 	for dgram := range c.inbound {
-		log.Println("got datagram:", dgram)
-
 		for _, sample := range dgram.Samples {
 			for _, record := range sample.GetRecords() {
-				if record.RecordType() == sflow.TypeHostCPUCountersRecord {
+				switch record.(type) {
+				case sflow.HostCPUCounters:
 					c.outbound <- &message.Message{
 						Class:   "host-counters",
 						Type:    "CPU",
 						Content: record,
 					}
+				case sflow.HostMemoryCounters:
+					c.outbound <- &message.Message{
+						Class:   "host-counters",
+						Type:    "Memory",
+						Content: record,
+					}
+				case sflow.HostDiskCounters:
+					c.outbound <- &message.Message{
+						Class:   "host-counters",
+						Type:    "Disk",
+						Content: record,
+					}
+				case sflow.HostNetCounters:
+					c.outbound <- &message.Message{
+						Class:   "host-counters",
+						Type:    "Net",
+						Content: record,
+					}
+				default:
 				}
 			}
 		}

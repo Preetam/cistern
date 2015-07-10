@@ -32,7 +32,6 @@ type Service struct {
 
 func NewService(conf Config, deviceRegistry *device.Registry) (*Service, error) {
 	// TODO: use config
-
 	s := &Service{
 		lock:                  sync.Mutex{},
 		deviceRegistry:        deviceRegistry,
@@ -51,8 +50,6 @@ func NewService(conf Config, deviceRegistry *device.Registry) (*Service, error) 
 }
 
 func (s *Service) dispatchSflowDatagrams() {
-	// TODO
-
 	for dgram := range s.sflowDatagrams {
 		log.Printf("received a datagram from %v", dgram.IpAddress)
 
