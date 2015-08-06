@@ -67,6 +67,5 @@ func getUint64Value(i interface{}) uint64 {
 	case uint32:
 		return uint64(n)
 	}
-
 	return i.(uint64)
 }

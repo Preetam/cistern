@@ -80,7 +80,6 @@ func (c *Class) handleCPUCounters(counters sflow.HostCPUCounters) {
 		counters.CPUGuest,
 		counters.CPUGuestNice,
 	)
-
 	c.outbound <- &message.Message{
 		Class:   "debug",
 		Content: str,

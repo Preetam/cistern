@@ -23,11 +23,14 @@ var (
 
 func main() {
 	// Flags
-	flag.StringVar(&sflowListenAddr, "sflow-listen-addr", sflowListenAddr, "listen address for sFlow datagrams")
-	flag.StringVar(&apiListenAddr, "api-listen-addr", apiListenAddr, "listen address for HTTP API server")
-	flag.StringVar(&configFile, "config", configFile, "configuration file")
-	flag.StringVar(&seriesDataDir, "series-data-dir", seriesDataDir, "directory to store time series data")
-
+	flag.StringVar(&sflowListenAddr, "sflow-listen-addr",
+		sflowListenAddr, "listen address for sFlow datagrams")
+	flag.StringVar(&apiListenAddr, "api-listen-addr",
+		apiListenAddr, "listen address for HTTP API server")
+	flag.StringVar(&configFile, "config",
+		configFile, "configuration file")
+	flag.StringVar(&seriesDataDir, "series-data-dir",
+		seriesDataDir, "directory to store time series data")
 	showVersion := flag.Bool("version", false, "Show version")
 	showLicense := flag.Bool("license", false, "Show software licenses")
 	showConfig := flag.Bool("show-config", false, "Show loaded config file")

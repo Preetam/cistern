@@ -12,14 +12,12 @@ type MetricState interface {
 
 type DerivativeState struct {
 	lastUpdated time.Time
-
 	// This is a uint64 because we want calculate
 	// derivatives accurately.
 	//
 	// When's the last time you saw a system
 	// counter that was a float?
-	prev uint64
-
+	prev  uint64
 	value float32
 }
 
@@ -45,21 +43,16 @@ func (g GaugeState) Value() float32 {
 func (d DerivativeState) Update(value interface{}) MetricState {
 	now := time.Now()
 	timeDelta := now.Sub(d.lastUpdated)
-
 	currentValue := getUint64Value(value)
-
 	if d.prev >= currentValue {
 		// Rollover? Keep the value we have.
 		d.lastUpdated = now
 		d.prev = currentValue
 		return d
 	}
-
 	d.value = float32(float64(currentValue-d.prev) / timeDelta.Seconds())
-
 	d.lastUpdated = now
 	d.prev = currentValue
-
 	return d
 }
 

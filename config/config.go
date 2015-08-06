@@ -30,11 +30,9 @@ type SNMPEntry struct {
 
 func Load(path string) (Configuration, error) {
 	conf := Configuration{}
-
 	contents, err := ioutil.ReadFile(path)
 	if err != nil {
 		return conf, err
 	}
-
 	return conf, json.Unmarshal(contents, &conf)
 }

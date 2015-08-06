@@ -15,35 +15,43 @@ type mapIP [16]byte
 
 type Registry struct {
 	sync.Mutex
-
-	devices map[mapIP]*Device
+	devices  map[mapIP]*Device
+	messages chan *message.Message
 }
 
 func NewRegistry() *Registry {
-	return &Registry{
-		Mutex:   sync.Mutex{},
-		devices: map[mapIP]*Device{},
+	r := &Registry{
+		Mutex:    sync.Mutex{},
+		devices:  map[mapIP]*Device{},
+		messages: make(chan *message.Message, 1),
+	}
+	go r.processMessages()
+	return r
+}
+
+func (r *Registry) processMessages() {
+	for m := range r.messages {
+		if !m.Global {
+			panic("registry received non-global message")
+		}
+		// TODO
 	}
 }
 
 func (r *Registry) RegisterDevice(hostname string, address net.IP) (*Device, error) {
 	key := toMapIP(address)
-
 	if _, present := r.devices[key]; present {
 		return nil, ErrAddressAlreadyRegistered
 	}
-
 	d := &Device{
-		hostname: hostname,
-		address:  address,
-		classes:  map[string]class.Class{},
-		messages: make(chan *message.Message, 1),
+		hostname:         hostname,
+		address:          address,
+		classes:          map[string]class.Class{},
+		internalMessages: make(chan *message.Message, 1),
+		globalMessages:   r.messages,
 	}
-
 	go d.processMessages()
-
 	r.devices[key] = d
-
 	return d, nil
 }
 

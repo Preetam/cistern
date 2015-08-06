@@ -15,32 +15,25 @@ type Engine struct {
 
 func NewEngine(baseDir string) (*Engine, error) {
 	db, err := catena.OpenDB(baseDir, 3600, 24*90)
-
 	if err != nil {
 		log.Println(err)
-
 		db, err = catena.NewDB(baseDir, 3600, 24*90)
 		if err != nil {
 			return nil, err
 		}
 	}
-
 	engine := &Engine{
 		DB:      db,
 		Inbound: make(chan Observation, 512),
 	}
-
 	go engine.handleInbound()
-
 	return engine, nil
 }
 
 func (engine *Engine) handleInbound() {
 	log.Println("[Series engine] Handling inbound observations")
-
 	var wait = time.After(time.Second * 5)
 	var buffer = make([]Observation, 0, 512)
-
 	for {
 		select {
 		case <-wait:
@@ -48,9 +41,7 @@ func (engine *Engine) handleInbound() {
 				engine.writeObservations(buffer)
 				buffer = buffer[:0]
 			}
-
 			wait = time.After(time.Second * 5)
-
 		case obs := <-engine.Inbound:
 			buffer = append(buffer, obs)
 			if len(buffer) == 512 {

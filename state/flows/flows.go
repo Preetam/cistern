@@ -70,8 +70,7 @@ func toFlowKey(protocol string, source, destination net.IP, sourcePort, destPort
 
 type TopTalkers struct {
 	flows map[flowKey]Flow
-
-	lock sync.Mutex
+	lock  sync.Mutex
 }
 
 func NewTopTalkers(window time.Duration) *TopTalkers {

@@ -21,9 +21,7 @@ func NewClass(sourceAddress net.IP, inbound chan *sflow.Datagram, outbound chan 
 		inbound:       inbound,
 		outbound:      outbound,
 	}
-
 	go c.generateMessages()
-
 	return c
 }
 

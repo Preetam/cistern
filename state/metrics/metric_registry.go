@@ -29,9 +29,7 @@ func (m *MetricRegistry) Update(metric string, metricType MetricType, value inte
 			state = GaugeState{}
 		}
 	}
-
 	m.metrics[metric] = state.Update(value)
-
 	return state.Value()
 }
 
@@ -40,19 +38,16 @@ func (m *MetricRegistry) Get(metric string) float32 {
 	if !present {
 		return float32(math.NaN())
 	}
-
 	return state.Value()
 }
 
 func (m *MetricRegistry) Metrics() []MetricDefinition {
 	metrics := []MetricDefinition{}
-
 	for metric, state := range m.metrics {
 		metrics = append(metrics, MetricDefinition{
 			Name: metric,
 			Type: state.Type(),
 		})
 	}
-
 	return metrics
 }

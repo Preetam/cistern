@@ -22,10 +22,8 @@ var DefaultConfig = Config{
 }
 
 type Service struct {
-	lock sync.Mutex
-
-	deviceRegistry *device.Registry
-
+	lock                  sync.Mutex
+	deviceRegistry        *device.Registry
 	sflowDatagrams        chan *sflowProto.Datagram
 	deviceDatagramInbound map[*device.Device]chan *sflowProto.Datagram
 }
@@ -38,23 +36,18 @@ func NewService(conf Config, deviceRegistry *device.Registry) (*Service, error) 
 		sflowDatagrams:        make(chan *sflowProto.Datagram),
 		deviceDatagramInbound: map[*device.Device]chan *sflowProto.Datagram{},
 	}
-
 	_, err := sflow.NewDecoder(conf.SFlowAddr, s.sflowDatagrams)
 	if err != nil {
 		return nil, err
 	}
-
 	go s.dispatchSflowDatagrams()
-
 	return s, nil
 }
 
 func (s *Service) dispatchSflowDatagrams() {
 	for dgram := range s.sflowDatagrams {
 		log.Printf("received a datagram from %v", dgram.IpAddress)
-
 		s.deviceRegistry.Lock()
-
 		dev := s.deviceRegistry.Lookup(dgram.IpAddress)
 		if dev == nil {
 			var err error
@@ -65,22 +58,18 @@ func (s *Service) dispatchSflowDatagrams() {
 			}
 		}
 		s.deviceRegistry.Unlock()
-
 		dev.Lock()
-
 		if !dev.HasClass("sflow") {
 			log.Println(dev, "needs class \"sflow\".")
 			c := make(chan *sflowProto.Datagram, 1)
 			dev.RegisterClass(commSflow.NewClass(dgram.IpAddress, c, dev.Messages()))
 			s.deviceDatagramInbound[dev] = c
 		}
-
 		select {
 		case s.deviceDatagramInbound[dev] <- dgram:
 		default:
 			// Drop.
 		}
-
 		dev.Unlock()
 	}
 }
