@@ -19,6 +19,7 @@ var (
 	apiListenAddr   = ":8080"
 	configFile      = "/opt/cistern/config.json"
 	seriesDataDir   = "/opt/cistern/series"
+	commitSHA       = ""
 )
 
 func main() {
@@ -37,7 +38,7 @@ func main() {
 	flag.Parse()
 
 	if *showVersion {
-		fmt.Println("Cistern version", version)
+		fmt.Println("Cistern version", version, "[ "+commitSHA+" ]")
 		os.Exit(0)
 	}
 
