@@ -7,10 +7,10 @@ import (
 	"net"
 	"sync"
 
-	"github.com/Preetam/cistern/device/class"
-	"github.com/Preetam/cistern/device/class/info/debug"
-	"github.com/Preetam/cistern/device/class/info/host_counters"
-	"github.com/Preetam/cistern/message"
+	"internal/device/class"
+	"internal/device/class/info/debug"
+	"internal/device/class/info/host_counters"
+	"internal/message"
 )
 
 var (
