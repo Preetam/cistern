@@ -5,8 +5,8 @@ import (
 	"net"
 	"sync"
 
-	"github.com/Preetam/cistern/device/class"
-	"github.com/Preetam/cistern/message"
+	"internal/device/class"
+	"internal/message"
 )
 
 var ErrAddressAlreadyRegistered = errors.New("device: address already registered")

@@ -1,8 +1,8 @@
 package snmp
 
 import (
-	"github.com/Preetam/cistern/message"
 	"github.com/Preetam/snmp"
+	"internal/message"
 )
 
 const ClassName = "snmp"

@@ -1,9 +1,9 @@
 package class
 
 import (
-	"github.com/Preetam/cistern/device/class/comm/sflow"
-	"github.com/Preetam/cistern/device/class/info/host_counters"
-	"github.com/Preetam/cistern/message"
+	"internal/device/class/comm/sflow"
+	"internal/device/class/info/host_counters"
+	"internal/message"
 )
 
 type Class interface {

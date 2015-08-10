@@ -8,9 +8,9 @@ import (
 
 	sflowProto "github.com/Preetam/sflow"
 
-	"github.com/Preetam/cistern/device"
-	commSflow "github.com/Preetam/cistern/device/class/comm/sflow"
-	"github.com/Preetam/cistern/net/sflow"
+	"internal/device"
+	commSflow "internal/device/class/comm/sflow"
+	"internal/net/sflow"
 )
 
 type Config struct {

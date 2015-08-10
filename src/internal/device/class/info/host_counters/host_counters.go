@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/Preetam/cistern/message"
 	"github.com/Preetam/sflow"
+	"internal/message"
 )
 
 const ClassName = "host-counters"

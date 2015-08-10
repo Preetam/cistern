@@ -4,7 +4,7 @@ import (
 	"log"
 	"net"
 
-	"github.com/Preetam/cistern/message"
+	"internal/message"
 )
 
 const ClassName = "debug"
