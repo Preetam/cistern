@@ -1,8 +1,6 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
 	"log"
 	"time"
 
@@ -14,13 +12,24 @@ func main() {
 	sess := session.Must(session.NewSession())
 	svc := cloudwatchlogs.New(sess)
 
-	limit := int64(1000)
+	limit := int64(10000)
 	groupName := "flowlogs"
 
-	now := (time.Now().Unix() - 6000) * 1000
+	eventCollection, err := OpenEventCollection("/tmp/flowlogs.lm2")
+	if err != nil {
+		if err == ErrDoesNotExist {
+			eventCollection, err = CreateEventCollection("/tmp/flowlogs.lm2")
+		}
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	now := (time.Now().Unix() - 86400) * 1000
 	lastEventTs := now
 	var token *string
 	var prevMessageID *string
+	interleaved := true
 	for {
 		log.Println("starting batch ===================================================")
 		output, err := svc.FilterLogEvents(&cloudwatchlogs.FilterLogEventsInput{
@@ -28,6 +37,7 @@ func main() {
 			Limit:        &limit,
 			NextToken:    token,
 			StartTime:    &lastEventTs,
+			Interleaved:  &interleaved,
 		})
 		if err != nil {
 			log.Fatal(err)
@@ -42,18 +52,25 @@ func main() {
 			}
 		}
 
+		collectionEvents := []Event{}
 		for _, e := range output.Events {
 			rec := &FlowLogRecord{}
 			err = rec.Parse(*e.Message)
 			if err == nil {
 				rec.Timestamp = rec.Start
 				rec.Duration = rec.End.Sub(rec.Start).Seconds()
-				b, _ := json.Marshal(rec)
-				fmt.Println(string(b))
+				event := rec.ToEvent()
+				event["_tag"] = *e.LogStreamName
+				collectionEvents = append(collectionEvents, event)
 			} else {
 				log.Println(err)
 			}
 		}
+		err = eventCollection.StoreEvents(collectionEvents)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Println("stored", len(collectionEvents), "events")
 
 		if output.NextToken == nil {
 			time.Sleep(60 * time.Second)

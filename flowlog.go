@@ -92,3 +92,24 @@ func (r *FlowLogRecord) Parse(s string) error {
 
 	return nil
 }
+
+func (r *FlowLogRecord) ToEvent() Event {
+	return map[string]interface{}{
+		"version":        r.Version,
+		"account_id":     r.AccountID,
+		"interface_id":   r.InterfaceID,
+		"source_address": r.SourceAddress,
+		"dest_address":   r.DestAddress,
+		"source_port":    r.SourcePort,
+		"dest_port":      r.DestPort,
+		"protocol":       r.Protocol,
+		"packets":        r.Packets,
+		"bytes":          r.Bytes,
+		"start":          r.Start,
+		"end":            r.End,
+		"action":         r.Action,
+		"log_status":     r.LogStatus,
+		"_ts":            r.Timestamp.Format(time.RFC3339Nano),
+		"_duration":      r.Duration,
+	}
+}

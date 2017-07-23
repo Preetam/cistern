@@ -2,10 +2,16 @@
 
 
 [[projects]]
+  name = "github.com/Preetam/lm2"
+  packages = ["."]
+  revision = "720acf9445599bd92e51ab3c0862a34b9527fdf6"
+  version = "v2.0.0"
+
+[[projects]]
   name = "github.com/aws/aws-sdk-go"
-  packages = ["aws","aws/awserr","aws/credentials","aws/endpoints","internal/shareddefaults"]
-  revision = "6d7fc1a00fcae6bbb53550f4a0b98324fd7aa250"
-  version = "v1.10.12"
+  packages = ["aws","aws/awserr","aws/awsutil","aws/client","aws/client/metadata","aws/corehandlers","aws/credentials","aws/credentials/ec2rolecreds","aws/credentials/endpointcreds","aws/credentials/stscreds","aws/defaults","aws/ec2metadata","aws/endpoints","aws/request","aws/session","aws/signer/v4","internal/shareddefaults","private/protocol","private/protocol/json/jsonutil","private/protocol/jsonrpc","private/protocol/query","private/protocol/query/queryutil","private/protocol/rest","private/protocol/xml/xmlutil","service/cloudwatchlogs","service/sts"]
+  revision = "afd601335e2a72d43caa3af6bd2abe512fcc3bfd"
+  version = "v1.10.14"
 
 [[projects]]
   name = "github.com/go-ini/ini"
@@ -13,9 +19,15 @@
   revision = "d3de07a94d22b4a0972deb4b96d790c2c0ce8333"
   version = "v1.28.0"
 
+[[projects]]
+  name = "github.com/jmespath/go-jmespath"
+  packages = ["."]
+  revision = "3433f3ea46d9f8019119e7dd41274e112a2359a9"
+  version = "0.2.2"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "dc0593ff900c0e5e32c3831fa08fa600484c2ae6cc339b5de8afd67a85da6b0f"
+  inputs-digest = "a9b1fc060b416a7c5b068c44ad00ce432a5ba96fc9086e11e56f0c1c6f2031dc"
   solver-name = "gps-cdcl"
   solver-version = 1
