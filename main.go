@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 
@@ -15,7 +17,7 @@ func main() {
 	limit := int64(1000)
 	groupName := "flowlogs"
 
-	now := (time.Now().Unix() - 600) * 1000
+	now := (time.Now().Unix() - 6000) * 1000
 	lastEventTs := now
 	var token *string
 	var prevMessageID *string
@@ -40,10 +42,21 @@ func main() {
 			}
 		}
 
-		log.Println(output.Events)
+		for _, e := range output.Events {
+			rec := &FlowLogRecord{}
+			err = rec.Parse(*e.Message)
+			if err == nil {
+				rec.Timestamp = rec.Start
+				rec.Duration = rec.End.Sub(rec.Start).Seconds()
+				b, _ := json.Marshal(rec)
+				fmt.Println(string(b))
+			} else {
+				log.Println(err)
+			}
+		}
 
 		if output.NextToken == nil {
-			time.Sleep(5 * time.Second)
+			time.Sleep(60 * time.Second)
 			token = nil
 			if len(output.Events) > 0 {
 				lastEventTs = *output.Events[len(output.Events)-1].Timestamp
