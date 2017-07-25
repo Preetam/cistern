@@ -1,13 +1,48 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"strconv"
 	"strings"
 	"time"
 )
+
+type FlowLogState struct {
+	LastTimestamp int64  `json:"last_timestamp"`
+	LastEventID   string `json:"last_event"`
+
+	filename string
+}
+
+func (s *FlowLogState) Store() error {
+	data, err := json.Marshal(s)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(s.filename, data, 0600)
+	return err
+}
+
+func (s *FlowLogState) Load() error {
+	data, err := ioutil.ReadFile(s.filename)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(data, s)
+	return err
+}
+
+func NewFlowLogState(filename string) (*FlowLogState, error) {
+	state := &FlowLogState{
+		filename: filename,
+	}
+	state.Load()
+	return state, state.Store()
+}
 
 // version account-id interface-id srcaddr dstaddr srcport dstport protocol packets bytes start end action log-status
 
@@ -27,8 +62,9 @@ type FlowLogRecord struct {
 	Action        string    `json:"action"`
 	LogStatus     string    `json:"log_status"`
 
-	Timestamp time.Time `json:"_ts"`
-	Duration  float64   `json:"_duration"`
+	Timestamp  time.Time `json:"_ts"`
+	Duration   float64   `json:"_duration"`
+	StreamName string    `json:"stream_name"`
 }
 
 func (r *FlowLogRecord) Parse(s string) error {
@@ -94,7 +130,7 @@ func (r *FlowLogRecord) Parse(s string) error {
 }
 
 func (r *FlowLogRecord) ToEvent() Event {
-	return map[string]interface{}{
+	return Event{
 		"version":        r.Version,
 		"account_id":     r.AccountID,
 		"interface_id":   r.InterfaceID,
@@ -111,5 +147,54 @@ func (r *FlowLogRecord) ToEvent() Event {
 		"log_status":     r.LogStatus,
 		"_ts":            r.Timestamp.Format(time.RFC3339Nano),
 		"_duration":      r.Duration,
+		"_tag":           r.StreamName,
 	}
+}
+
+func groupFlowRecords(records []*FlowLogRecord) []FlowLogRecord {
+	type groupKey struct {
+		Timestamp     time.Time
+		SourceAddress [16]byte
+		DestAddress   [16]byte
+		SourcePort    int
+		DestPort      int
+		Protocol      int
+	}
+	groups := map[groupKey]*FlowLogRecord{}
+	for _, rec := range records {
+		key := groupKey{
+			Timestamp:     rec.Timestamp.Truncate(time.Minute * 10),
+			SourceAddress: ipTo16Bytes(rec.SourceAddress),
+			DestAddress:   ipTo16Bytes(rec.DestAddress),
+			SourcePort:    rec.SourcePort,
+			DestPort:      rec.DestPort,
+			Protocol:      rec.Protocol,
+		}
+		groupRec := groups[key]
+		if groupRec == nil {
+			groupRec = &FlowLogRecord{
+				Timestamp:     key.Timestamp,
+				SourceAddress: net.IP(key.SourceAddress[:]),
+				DestAddress:   net.IP(key.DestAddress[:]),
+				SourcePort:    key.SourcePort,
+				DestPort:      key.DestPort,
+				Protocol:      key.Protocol,
+			}
+			groups[key] = groupRec
+		}
+		groupRec.Bytes += rec.Bytes
+		groupRec.Packets += rec.Packets
+	}
+
+	result := []FlowLogRecord{}
+	for _, rec := range groups {
+		result = append(result, *rec)
+	}
+	return result
+}
+
+func ipTo16Bytes(ip net.IP) [16]byte {
+	result := [16]byte{}
+	copy(result[:], ip.To16())
+	return result
 }

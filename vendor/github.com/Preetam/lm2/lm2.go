@@ -218,7 +218,7 @@ func NewCollection(file string, cacheSize int) (*Collection, error) {
 	// write file header
 	c.fileHeader.Version = fileVersion
 	c.fileHeader.Next[0] = 0
-	c.fileHeader.LastCommit = int64(8 * 2)
+	c.fileHeader.LastCommit = int64(512)
 	c.f.Seek(0, 0)
 	err = binary.Write(c.f, binary.LittleEndian, c.fileHeader)
 	if err != nil {

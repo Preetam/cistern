@@ -4,8 +4,8 @@
 [[projects]]
   name = "github.com/Preetam/lm2"
   packages = ["."]
-  revision = "6244b03de4c2cf9f139e7abab65d312cf232acd6"
-  version = "v2.0.1"
+  revision = "69053566e39cb20205a870b3be5d136f64851588"
+  version = "v2.0.2"
 
 [[projects]]
   name = "github.com/aws/aws-sdk-go"
