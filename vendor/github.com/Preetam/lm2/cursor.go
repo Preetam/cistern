@@ -156,6 +156,11 @@ func (c *Cursor) Seek(key string) {
 		c.collection.metaLock.RLock()
 		offset = c.collection.Next[0]
 		c.collection.metaLock.RUnlock()
+
+		if offset == 0 {
+			c.current = nil
+			return
+		}
 	}
 	rec, err := c.collection.readRecord(offset)
 	if err != nil {

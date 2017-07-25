@@ -667,8 +667,8 @@ func TestSeekOverwrittenKey(t *testing.T) {
 	}
 }
 
-func TestEmptyCollectionCursorSeekPanic(t *testing.T) {
-	c, err := NewCollection("/tmp/test_emptycollectioncursorseekpanic.lm2", 100)
+func TestEmptyCollectionCursor(t *testing.T) {
+	c, err := NewCollection("/tmp/test_emptycollectioncursor.lm2", 100)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -683,6 +683,12 @@ func TestEmptyCollectionCursorSeekPanic(t *testing.T) {
 
 	if cur.Valid() {
 		t.Errorf("expected cur.Valid() to return false")
+	}
+	for cur.Next() {
+		t.Error("expected cur.Next() to return false")
+	}
+	if cur.Err() != nil {
+		t.Error("unexpected error:", cur.Err())
 	}
 }
 

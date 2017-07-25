@@ -4,8 +4,8 @@
 [[projects]]
   name = "github.com/Preetam/lm2"
   packages = ["."]
-  revision = "720acf9445599bd92e51ab3c0862a34b9527fdf6"
-  version = "v2.0.0"
+  revision = "6244b03de4c2cf9f139e7abab65d312cf232acd6"
+  version = "v2.0.1"
 
 [[projects]]
   name = "github.com/aws/aws-sdk-go"
@@ -28,6 +28,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a9b1fc060b416a7c5b068c44ad00ce432a5ba96fc9086e11e56f0c1c6f2031dc"
+  inputs-digest = "266254eba605ef43cbc37367659da770b25df93a0352b62fa1778e04b7285eaa"
   solver-name = "gps-cdcl"
   solver-version = 1
