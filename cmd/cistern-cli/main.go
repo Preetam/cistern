@@ -24,7 +24,7 @@ func main() {
 	end := flag.Int64("end", time.Now().Unix(), "End ts")
 	orderBy := flag.String("order-by", "", "Order by")
 	limit := flag.Int("limit", 0, "Limit")
-	pointSize := flag.Int64("point-size", 0, "Point size")
+	pointSize := flag.Duration("point-size", 0, "Point size")
 	descending := flag.Bool("descending", false, "Descending")
 	showVersion := flag.Bool("version", false, "Show version")
 	flag.Parse()
@@ -42,7 +42,7 @@ func main() {
 	queryDesc.TimeRange.Start = time.Unix(*start, 0)
 	queryDesc.TimeRange.End = time.Unix(*end, 0)
 	queryDesc.Limit = *limit
-	queryDesc.PointSize = *pointSize
+	queryDesc.PointSize = (*pointSize).Nanoseconds() / 1000
 	queryDesc.Descending = *descending
 	buf := &bytes.Buffer{}
 	err = json.NewEncoder(buf).Encode(queryDesc)
