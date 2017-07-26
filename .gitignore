@@ -4,3 +4,4 @@ bin
 pkg
 cistern
 !vendor/*
+cistern.json

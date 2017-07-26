@@ -5,10 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/cloudwatchlogs"
 )
 
 type FlowLogState struct {
@@ -197,4 +202,133 @@ func ipTo16Bytes(ip net.IP) [16]byte {
 	result := [16]byte{}
 	copy(result[:], ip.To16())
 	return result
+}
+
+func captureFlowLogs(groupName string, done chan struct{}) error {
+	stop := make(chan struct{}, 1)
+
+	go func() {
+		<-done
+		stop <- struct{}{}
+	}()
+
+	sess := session.Must(session.NewSession())
+	svc := cloudwatchlogs.New(sess)
+
+	limit := int64(10000)
+
+	stateFile, err := NewFlowLogState(filepath.Join(DataDir, groupName+".state"))
+	if err != nil {
+		return err
+	}
+
+	collectionsLock.Lock()
+	eventCollection := Collections[groupName]
+	if eventCollection == nil {
+		eventCollection, err = OpenEventCollection(filepath.Join(DataDir, groupName+".lm2"))
+		if err != nil {
+			if err == ErrDoesNotExist {
+				eventCollection, err = CreateEventCollection(filepath.Join(DataDir, groupName+".lm2"))
+			}
+			if err != nil {
+				collectionsLock.Unlock()
+				return err
+			}
+		}
+		Collections[groupName] = eventCollection
+	}
+	collectionsLock.Unlock()
+
+	const batchSizeSeconds = 3600
+	const batchSizeMilliseconds = batchSizeSeconds * 1000
+
+	now := stateFile.LastTimestamp
+	if now == 0 {
+		now = (time.Now().Unix() - 86400) * 1000
+	}
+	nextBatchStart := (now / batchSizeMilliseconds) * batchSizeMilliseconds
+	var token *string
+	interleaved := true
+
+	currentBatch := []*FlowLogRecord{}
+	timer := time.NewTimer(0)
+	for {
+
+		select {
+		case <-timer.C:
+			log.Println("tick")
+		case <-stop:
+			log.Println("stopping", groupName)
+			eventCollection.col.Close()
+			return nil
+		}
+
+		log.Println("starting batch", nextBatchStart, "===================================================")
+		batchEnd := nextBatchStart + batchSizeMilliseconds - 1
+		output, err := svc.FilterLogEvents(&cloudwatchlogs.FilterLogEventsInput{
+			LogGroupName: &groupName,
+			Limit:        &limit,
+			NextToken:    token,
+			StartTime:    &nextBatchStart,
+			EndTime:      &batchEnd,
+			Interleaved:  &interleaved,
+		})
+		if err != nil {
+			return err
+		}
+
+		for _, e := range output.Events {
+			rec := &FlowLogRecord{}
+			err = rec.Parse(*e.Message)
+			if err == nil {
+				rec.Timestamp = rec.Start
+				rec.Duration = rec.End.Sub(rec.Start).Seconds()
+				rec.StreamName = *e.LogStreamName
+				currentBatch = append(currentBatch, rec)
+			} else {
+				return err
+			}
+		}
+
+		if output.NextToken == nil {
+			log.Println("raw events:", len(currentBatch))
+			grouped := groupFlowRecords(currentBatch)
+			log.Println("grouped events:", len(grouped))
+			events := []Event{}
+			for _, rec := range grouped {
+				event := rec.ToEvent()
+				event["_tag"] = "flowlog"
+				event["_hash"] = "000000"
+				events = append(events, event)
+			}
+			err = eventCollection.StoreEvents(events)
+			if err != nil {
+				return err
+			}
+
+			if len(output.Events) > 0 {
+				stateFile.LastTimestamp = nextBatchStart
+				stateFile.Store()
+			}
+			next := time.Unix(batchEnd/1000+batchSizeSeconds, 0)
+			if time.Now().After(next) {
+				timer.Reset(0)
+			} else {
+				timer.Reset(next.Sub(time.Now()))
+			}
+			nextBatchStart = batchEnd + 1
+			token = nil
+			currentBatch = currentBatch[:0]
+		} else {
+			token = output.NextToken
+			timer.Reset(0)
+		}
+	}
+}
+
+func sleepUntil(ts time.Time) {
+	if time.Now().After(ts) {
+		return
+	}
+	time.Sleep(ts.Sub(time.Now()))
 }

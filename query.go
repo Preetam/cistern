@@ -69,6 +69,13 @@ func (o OrderBy) Less(i, j int) bool {
 }
 
 func (c *EventCollection) Query(desc QueryDesc) (interface{}, error) {
+	if desc.TimeRange.Start.Before(minTimestamp) {
+		desc.TimeRange.Start = minTimestamp
+	}
+	if desc.TimeRange.End.Before(minTimestamp) {
+		desc.TimeRange.End = minTimestamp
+	}
+
 	if desc.TimeRange.Start == minTimestamp && desc.TimeRange.End == minTimestamp {
 		desc.TimeRange.End = fromMicrosecondTime(math.MaxInt64)
 	}
@@ -344,7 +351,7 @@ func splitID(id string) (int64, string, string, error) {
 		if len(parts) == 2 {
 			parts = append(parts, "")
 		} else {
-			return 0, "", "", errors.New("invalid ID")
+			return 0, "", "", errors.New("invalid ID 1")
 		}
 	}
 	ts, err := strconv.ParseInt(parts[0], 10, 64)
@@ -356,7 +363,7 @@ func splitID(id string) (int64, string, string, error) {
 
 func splitCollectionID(id string) (int64, string, string, error) {
 	if len(id) < 1 {
-		return 0, "", "", errors.New("invalid ID")
+		return 0, "", "", errors.New("invalid ID 2")
 	}
 	if id[0] != eventKeyPrefix {
 		return 0, "", "", errors.New("invalid ID prefix")
@@ -364,7 +371,7 @@ func splitCollectionID(id string) (int64, string, string, error) {
 	id = id[1:]
 
 	if len(id) < 8+2 {
-		return 0, "", "", errors.New("invalid ID")
+		return 0, "", "", errors.New("invalid ID 3")
 	}
 
 	formattedTs := [8]byte{
@@ -382,16 +389,16 @@ func splitCollectionID(id string) (int64, string, string, error) {
 
 	id = id[8:]
 
-	if id[0] != '-' {
-		return 0, "", "", errors.New("invalid ID")
+	if id[0] != '|' {
+		return 0, "", "", errors.New("invalid ID 4")
 	}
 
 	id = id[1:]
 
-	parts := strings.Split(id, "-")
+	parts := strings.Split(id, "|")
 
 	if len(parts) != 2 {
-		return 0, "", "", errors.New("invalid ID")
+		return 0, "", "", errors.New("invalid ID 5")
 	}
 
 	return ts, parts[0], parts[1], nil
