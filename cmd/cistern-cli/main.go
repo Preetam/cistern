@@ -22,6 +22,10 @@ func main() {
 	filters := flag.String("filters", "", "Filters")
 	start := flag.Int64("start", time.Now().Unix()-3600, "Start ts")
 	end := flag.Int64("end", time.Now().Unix(), "End ts")
+	orderBy := flag.String("order-by", "", "Order by")
+	limit := flag.Int("limit", 0, "Limit")
+	pointSize := flag.Int64("point-size", 0, "Point size")
+	descending := flag.Bool("descending", false, "Descending")
 	showVersion := flag.Bool("version", false, "Show version")
 	flag.Parse()
 
@@ -30,14 +34,16 @@ func main() {
 		os.Exit(0)
 	}
 
-	queryDesc, err := parseQuery(*columns, *group, *filters)
+	queryDesc, err := parseQuery(*columns, *group, *filters, *orderBy)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	queryDesc.TimeRange.Start = time.Unix(*start, 0)
 	queryDesc.TimeRange.End = time.Unix(*end, 0)
-
+	queryDesc.Limit = *limit
+	queryDesc.PointSize = *pointSize
+	queryDesc.Descending = *descending
 	buf := &bytes.Buffer{}
 	err = json.NewEncoder(buf).Encode(queryDesc)
 	if err != nil {

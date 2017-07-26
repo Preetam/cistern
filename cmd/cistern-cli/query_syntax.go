@@ -10,7 +10,7 @@ var (
 	commaSeparatedGroups = regexp.MustCompile(`(?:"(?:\\.|[^"])*"|\\.|[^,])+`)
 )
 
-func parseQuery(columnsStr, groupStr, filters string) (QueryDesc, error) {
+func parseQuery(columnsStr, groupStr, filters, orderBy string) (QueryDesc, error) {
 	result := QueryDesc{}
 
 	if columnsStr != "" {
@@ -43,6 +43,13 @@ func parseQuery(columnsStr, groupStr, filters string) (QueryDesc, error) {
 				Condition: splitFilterParts[1],
 				Value:     splitFilterParts[2],
 			})
+		}
+	}
+
+	if orderBy != "" {
+		parts := strings.Split(orderBy, ",")
+		for _, orderColumn := range parts {
+			result.OrderBy = append(result.OrderBy, strings.TrimSpace(orderColumn))
 		}
 	}
 
