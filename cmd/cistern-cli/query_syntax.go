@@ -22,7 +22,7 @@ func parseQuery(columnsStr, groupStr, filters string) (QueryDesc, error) {
 			}
 			result.Columns = append(result.Columns, ColumnDesc{
 				Aggregate: parts[0],
-				Name:      strings.TrimRight(parts[1], ")"),
+				Name:      strings.TrimRight(parts[1], "),"),
 			})
 		}
 	}

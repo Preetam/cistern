@@ -5,3 +5,4 @@ pkg
 cistern
 !vendor/*
 cistern.json
+data/
