@@ -65,5 +65,5 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	fmt.Printf("%s", pretty)
+	fmt.Printf("%s\n", pretty)
 }

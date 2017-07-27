@@ -136,9 +136,6 @@ func (r *FlowLogRecord) Parse(s string) error {
 
 func (r *FlowLogRecord) ToEvent() Event {
 	return Event{
-		"version":        r.Version,
-		"account_id":     r.AccountID,
-		"interface_id":   r.InterfaceID,
 		"source_address": r.SourceAddress,
 		"dest_address":   r.DestAddress,
 		"source_port":    r.SourcePort,
@@ -146,12 +143,7 @@ func (r *FlowLogRecord) ToEvent() Event {
 		"protocol":       r.Protocol,
 		"packets":        r.Packets,
 		"bytes":          r.Bytes,
-		"start":          r.Start,
-		"end":            r.End,
-		"action":         r.Action,
-		"log_status":     r.LogStatus,
 		"_ts":            r.Timestamp.Format(time.RFC3339Nano),
-		"_duration":      r.Duration,
 		"_tag":           r.StreamName,
 	}
 }
@@ -239,32 +231,39 @@ func captureFlowLogs(groupName string, done chan struct{}) error {
 	}
 	collectionsLock.Unlock()
 
-	const batchSizeSeconds = 3600
-	const batchSizeMilliseconds = batchSizeSeconds * 1000
+	const regularBatchSize = 5 * 60 * 1000         // 5 minutes
+	const catchupBatchSize = 72 * regularBatchSize // 6 hours
 
-	now := stateFile.LastTimestamp
-	if now == 0 {
-		now = (time.Now().Unix() - 86400) * 1000
+	nextBatchStart := stateFile.LastTimestamp
+	if nextBatchStart == 0 {
+		nextBatchStart = (time.Now().Unix() - 86400) * 1000
+		nextBatchStart = (nextBatchStart / regularBatchSize) * regularBatchSize
 	}
-	nextBatchStart := (now / batchSizeMilliseconds) * batchSizeMilliseconds
 	var token *string
 	interleaved := true
 
 	currentBatch := []*FlowLogRecord{}
 	timer := time.NewTimer(0)
 	for {
-
 		select {
 		case <-timer.C:
-			log.Println("tick")
 		case <-stop:
 			log.Println("stopping", groupName)
 			eventCollection.col.Close()
 			return nil
 		}
 
-		log.Println("starting batch", nextBatchStart, "===================================================")
-		batchEnd := nextBatchStart + batchSizeMilliseconds - 1
+		batchSize := int64(regularBatchSize)
+		if now := time.Now().Unix() * 1000; now-nextBatchStart > 6*regularBatchSize {
+			batchSize = now - nextBatchStart
+			batchSize = (batchSize / regularBatchSize) * regularBatchSize
+			if batchSize > catchupBatchSize {
+				batchSize = catchupBatchSize
+			}
+		}
+
+		log.Println("starting batch", nextBatchStart)
+		batchEnd := nextBatchStart + batchSize - 1
 		output, err := svc.FilterLogEvents(&cloudwatchlogs.FilterLogEventsInput{
 			LogGroupName: &groupName,
 			Limit:        &limit,
@@ -298,7 +297,6 @@ func captureFlowLogs(groupName string, done chan struct{}) error {
 			for _, rec := range grouped {
 				event := rec.ToEvent()
 				event["_tag"] = "flowlog"
-				event["_hash"] = "000000"
 				events = append(events, event)
 			}
 			err = eventCollection.StoreEvents(events)
@@ -310,11 +308,11 @@ func captureFlowLogs(groupName string, done chan struct{}) error {
 				stateFile.LastTimestamp = nextBatchStart
 				stateFile.Store()
 			}
-			next := time.Unix(batchEnd/1000+batchSizeSeconds, 0)
+			next := time.Unix((batchEnd+regularBatchSize)/1000, 0)
 			if time.Now().After(next) {
 				timer.Reset(0)
 			} else {
-				timer.Reset(next.Sub(time.Now()))
+				timer.Reset(next.Sub(time.Now()) + time.Second)
 			}
 			nextBatchStart = batchEnd + 1
 			token = nil
@@ -324,11 +322,4 @@ func captureFlowLogs(groupName string, done chan struct{}) error {
 			timer.Reset(0)
 		}
 	}
-}
-
-func sleepUntil(ts time.Time) {
-	if time.Now().After(ts) {
-		return
-	}
-	time.Sleep(ts.Sub(time.Now()))
 }
