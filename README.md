@@ -4,6 +4,23 @@
 
 Cistern is a network flow collector.
 
+###### Supported sources
+
+* CloudWatch Logs
+  * VPC Flow Logs
+  * JSON (soon)
+* sFlow v5 (soon)
+
+Getting started
+---
+
+TODO
+
+Querying
+---
+
+TODO
+
 License
 ---
 MIT (see LICENSE)
