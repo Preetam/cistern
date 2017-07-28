@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -37,11 +39,17 @@ func parseQuery(columnsStr, groupStr, filters, orderBy string) (QueryDesc, error
 	if filters != "" {
 		filterParts := commaSeparatedGroups.FindAllString(filters, -1)
 		for _, filterPart := range filterParts {
-			splitFilterParts := strings.SplitN(filterPart, " ", 3)
+
+			splitFilterParts := strings.SplitN(strings.TrimSpace(filterPart), " ", 3)
+			jsonValue := json.RawMessage(splitFilterParts[2])
+			_, err := json.Marshal(jsonValue)
+			if err != nil {
+				return result, fmt.Errorf("%s is not a valid JSON value. Are you missing quotes?", jsonValue)
+			}
 			result.Filters = append(result.Filters, Filter{
 				Column:    splitFilterParts[0],
 				Condition: splitFilterParts[1],
-				Value:     splitFilterParts[2],
+				Value:     jsonValue,
 			})
 		}
 	}
