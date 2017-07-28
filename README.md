@@ -13,16 +13,18 @@ Cistern is a network flow collector.
   * JSON (soon)
 * sFlow v5 (soon)
 
-Getting started
----
+## Getting started
 
 TODO
 
-Querying
----
+## Querying
 
 TODO
 
-License
----
+### API
+
+### CLI
+
+## License
+
 MIT (see LICENSE)
