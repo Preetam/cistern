@@ -7,6 +7,7 @@ Cistern is a network flow collector.
 </p>
 
 ![experimental](https://img.shields.io/badge/status-experimental-orange.svg)
+[![Join the chat at https://gitter.im/Preetam/cistern](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Preetam/cistern?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 ---
 
