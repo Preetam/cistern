@@ -1,11 +1,11 @@
 package main
 
-type CloudWatchLogGroup struct {
-	Name         string   `json:"name"`
-	FlowLog      bool     `json:"flowlog"`
-	GroupColumns []string `json:"group_columns,omitempty"`
+type ConfigCloudWatchLogGroup struct {
+	Name    string `json:"name"`
+	FlowLog bool   `json:"flowlog"`
 }
 
 type Config struct {
-	CloudWatchLogs []CloudWatchLogGroup `json:"cloudwatch_logs"`
+	CloudWatchLogs []ConfigCloudWatchLogGroup `json:"cloudwatch_logs"`
+	Retention      int                        `json:"retention"`
 }

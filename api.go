@@ -45,5 +45,31 @@ func service() *siesta.Service {
 
 		json.NewEncoder(w).Encode(result)
 	})
+
+	service.Route("POST", "/collections/:collection/compact", "compacts a collection", func(w http.ResponseWriter, r *http.Request) {
+		var params siesta.Params
+		collectionName := params.String("collection", "", "collection name")
+		err := params.Parse(r.Form)
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		collectionsLock.Lock()
+		collection, present := Collections[*collectionName]
+		collectionsLock.Unlock()
+
+		if !present {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		err = collection.Compact()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			log.Println(err)
+		}
+	})
 	return service
 }

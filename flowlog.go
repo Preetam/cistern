@@ -196,18 +196,17 @@ func ipTo16Bytes(ip net.IP) [16]byte {
 	return result
 }
 
-func captureFlowLogs(groupName string, done chan struct{}) error {
+func captureFlowLogs(groupName string, retention int, done chan struct{}) error {
+	if retention == 0 {
+		retention = 3
+		log.Printf("Missing retention for %s; defaulting to %d days", groupName, retention)
+	}
 	stop := make(chan struct{}, 1)
 
 	go func() {
 		<-done
 		stop <- struct{}{}
 	}()
-
-	sess := session.Must(session.NewSession())
-	svc := cloudwatchlogs.New(sess)
-
-	limit := int64(10000)
 
 	stateFile, err := NewFlowLogState(filepath.Join(DataDir, groupName+".state"))
 	if err != nil {
@@ -231,6 +230,8 @@ func captureFlowLogs(groupName string, done chan struct{}) error {
 	}
 	collectionsLock.Unlock()
 
+	eventCollection.SetRetention(retention)
+
 	const regularBatchSize = 5 * 60 * 1000         // 5 minutes
 	const catchupBatchSize = 72 * regularBatchSize // 6 hours
 
@@ -239,11 +240,12 @@ func captureFlowLogs(groupName string, done chan struct{}) error {
 		nextBatchStart = (time.Now().Unix() - 86400) * 1000
 		nextBatchStart = (nextBatchStart / regularBatchSize) * regularBatchSize
 	}
-	var token *string
-	interleaved := true
 
 	currentBatch := []*FlowLogRecord{}
 	timer := time.NewTimer(0)
+
+	cwl := NewCloudWatchLog(cloudwatchlogs.New(session.Must(session.NewSession())), groupName)
+
 	for {
 		select {
 		case <-timer.C:
@@ -262,21 +264,14 @@ func captureFlowLogs(groupName string, done chan struct{}) error {
 			}
 		}
 
-		log.Println("starting batch", nextBatchStart)
 		batchEnd := nextBatchStart + batchSize - 1
-		output, err := svc.FilterLogEvents(&cloudwatchlogs.FilterLogEventsInput{
-			LogGroupName: &groupName,
-			Limit:        &limit,
-			NextToken:    token,
-			StartTime:    &nextBatchStart,
-			EndTime:      &batchEnd,
-			Interleaved:  &interleaved,
-		})
+
+		logEvents, err := cwl.GetLogEvents(nextBatchStart, batchEnd)
 		if err != nil {
 			return err
 		}
 
-		for _, e := range output.Events {
+		for _, e := range logEvents {
 			rec := &FlowLogRecord{}
 			err = rec.Parse(*e.Message)
 			if err == nil {
@@ -284,42 +279,34 @@ func captureFlowLogs(groupName string, done chan struct{}) error {
 				rec.Duration = rec.End.Sub(rec.Start).Seconds()
 				rec.StreamName = *e.LogStreamName
 				currentBatch = append(currentBatch, rec)
-			} else {
-				return err
 			}
 		}
 
-		if output.NextToken == nil {
-			log.Println("raw events:", len(currentBatch))
-			grouped := groupFlowRecords(currentBatch)
-			log.Println("grouped events:", len(grouped))
-			events := []Event{}
-			for _, rec := range grouped {
-				event := rec.ToEvent()
-				event["_tag"] = "flowlog"
-				events = append(events, event)
-			}
+		grouped := groupFlowRecords(currentBatch)
+		events := []Event{}
+		for _, rec := range grouped {
+			event := rec.ToEvent()
+			event["_tag"] = "flowlog"
+			events = append(events, event)
+		}
+
+		if len(logEvents) > 0 {
+			log.Printf("Flow Logs group %s: aggregated %d events", groupName, len(logEvents))
 			err = eventCollection.StoreEvents(events)
 			if err != nil {
 				return err
 			}
 
-			if len(output.Events) > 0 {
-				stateFile.LastTimestamp = nextBatchStart
-				stateFile.Store()
-			}
-			next := time.Unix((batchEnd+regularBatchSize)/1000, 0)
-			if time.Now().After(next) {
-				timer.Reset(0)
-			} else {
-				timer.Reset(next.Sub(time.Now()) + time.Second)
-			}
-			nextBatchStart = batchEnd + 1
-			token = nil
-			currentBatch = currentBatch[:0]
-		} else {
-			token = output.NextToken
-			timer.Reset(0)
+			stateFile.LastTimestamp = nextBatchStart
+			stateFile.Store()
 		}
+		next := time.Unix((batchEnd+regularBatchSize)/1000, 0)
+		if time.Now().After(next) {
+			timer.Reset(0)
+		} else {
+			timer.Reset(next.Sub(time.Now()) + time.Second)
+		}
+		nextBatchStart = batchEnd + 1
+		currentBatch = currentBatch[:0]
 	}
 }

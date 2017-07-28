@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"regexp"
+	"sync"
 	"time"
 
 	"github.com/Preetam/lm2"
@@ -26,8 +27,10 @@ const (
 type Event map[string]interface{}
 
 type EventCollection struct {
-	filename string
-	col      *lm2.Collection
+	filename  string
+	col       *lm2.Collection
+	retention int // event retention in days
+	lock      sync.RWMutex
 }
 
 func OpenEventCollection(filename string) (*EventCollection, error) {
@@ -55,7 +58,14 @@ func CreateEventCollection(filename string) (*EventCollection, error) {
 	}, nil
 }
 
+func (c *EventCollection) SetRetention(days int) {
+	c.retention = days
+}
+
 func (c *EventCollection) StoreEvents(events []Event) error {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+
 	// Validate tags
 	for _, e := range events {
 		tag, ok := e["_tag"].(string)
@@ -112,5 +122,40 @@ func (c *EventCollection) StoreEvents(events []Event) error {
 		return err
 	}
 
+	return nil
+}
+
+func (c *EventCollection) Compact() error {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	minTs := time.Now().Add(-1 * time.Duration(c.retention) * 24 * time.Hour)
+	err := c.col.CompactFunc(func(key string, value string) (string, string, bool) {
+		if key[0] != eventKeyPrefix {
+			return key, value, true
+		}
+
+		ts, _, _, err := splitCollectionID(key)
+		if err != nil {
+			return key, value, true
+		}
+		if fromMicrosecondTime(ts).Before(minTs) {
+			return "", "", false
+		}
+
+		return key, value, true
+	})
+	if err != nil {
+		return err
+	}
+
+	col, err := lm2.OpenCollection(c.filename, 1000)
+	if err != nil {
+		if err == lm2.ErrDoesNotExist {
+			return ErrDoesNotExist
+		}
+		return err
+	}
+	c.col = col
 	return nil
 }

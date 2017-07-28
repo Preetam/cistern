@@ -69,6 +69,9 @@ func (o OrderBy) Less(i, j int) bool {
 }
 
 func (c *EventCollection) Query(desc QueryDesc) (interface{}, error) {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+
 	if desc.TimeRange.Start.Before(minTimestamp) {
 		desc.TimeRange.Start = minTimestamp
 	}

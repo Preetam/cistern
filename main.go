@@ -48,7 +48,7 @@ func main() {
 	for _, group := range config.CloudWatchLogs {
 		if group.FlowLog {
 			go func() {
-				err := captureFlowLogs(group.Name, done)
+				err := captureFlowLogs(group.Name, config.Retention, done)
 				if err != nil {
 					log.Fatal(err)
 				}
