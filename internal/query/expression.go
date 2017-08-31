@@ -70,7 +70,7 @@ func (e *expression) SetLimit(num string) {
 
 func (e *expression) SetPointSize(num string) {
 	dur, _ := time.ParseDuration(num)
-	e.query.PointSize = int64(dur)
+	e.query.PointSize = int64(dur) / 1e3
 }
 
 func Parse(query string) (*Desc, error) {

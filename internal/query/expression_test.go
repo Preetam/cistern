@@ -63,7 +63,7 @@ func TestParse(t *testing.T) {
 					{Aggregate: "sum", Name: "bytes"},
 				},
 				Limit:     1,
-				PointSize: 5000000000,
+				PointSize: 5000000,
 			},
 		},
 		{
@@ -106,7 +106,7 @@ func TestParse(t *testing.T) {
 					{Name: "source_addr"},
 				},
 				Limit:     100,
-				PointSize: 3600000000000,
+				PointSize: 3600000000,
 			},
 		},
 		{
