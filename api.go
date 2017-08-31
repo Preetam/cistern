@@ -12,7 +12,13 @@ import (
 
 func service() *siesta.Service {
 	service := siesta.NewService("/")
+	service.Route("OPTIONS", "/collections/:collection/query", "preflight request", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", r.Header.Get("Access-Control-Request-Headers"))
+	})
 	service.Route("POST", "/collections/:collection/query", "query a collection", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+
 		var params siesta.Params
 		collectionName := params.String("collection", "", "collection name")
 		queryString := params.String("query", "", "query string")
