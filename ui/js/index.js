@@ -8,6 +8,12 @@ var App = {
   }
 };
 
+var groupIDToColorString = function(groupID) {
+  var hue = parseInt(groupID, 16)
+  hue = hue % 360
+  return "hsl(" + hue + ", 50%, 50%)"
+}
+
 var ChartState = function(width, height, start, end, data, name, brushEnd) {
   this.width = width;
   this.height = height;
@@ -50,8 +56,7 @@ var Chart = function(chartState) {
         }).y(function(d) {
           return y(d.y);
         });
-        var hue = Math.round(Math.random() * 360);
-        var color = "hsl(" + hue + ", 50%, 50%)";
+        var color = groupIDToColorString(i);
         d3.select(chart).select(".lineGroup").append("path").attr("d", line(lineData)).attr("fill", "none").attr("stroke", color).attr("stroke-width", "2px");
       }
       // Draw axes
@@ -81,11 +86,15 @@ var Chart = function(chartState) {
       resize(vnode);
     }.bind(this);
     // Elements
-    return [ m("svg", {
-      width: "100%",
-      height: this.chartState.height,
-      oncreate: draw.bind(this)
-    }, m("g", [ m("g.lineGroup"), m("g.x-axis"), m("g.y-axis"), m("g.brush") ])) ];
+    return [
+      m("h4", this.chartState.name),
+      m("svg", {
+        width: "100%",
+        height: this.chartState.height,
+        oncreate: draw.bind(this)
+      },
+      m("g", [ m("g.lineGroup"), m("g.x-axis"), m("g.y-axis"), m("g.brush") ]))
+    ];
   };
 };
 
@@ -140,10 +149,12 @@ var ChartContainer = {
 
         this.chartStates = {};
         for (var i in chartData) {
-          this.chartStates[i] = new ChartState(400, 400, new Date(data.query.time_range.start), new Date(data.query.time_range.end), {
+          this.chartStates[i] = new ChartState(200, 200, new Date(data.query.time_range.start), new Date(data.query.time_range.end), {
             lines: chartData[i]
           }, i, this.brushEnd);
         }
+
+        this.summaryRows = data.summary;
         this.start = new Date(data.query.time_range.start);
         this.end = new Date(data.query.time_range.end);
 
@@ -165,6 +176,41 @@ var ChartContainer = {
     for (var i in vnode.state.chartStates) {
       chartComponents.push(m(new Chart(vnode.state.chartStates[i])));
     }
+
+    var summaryRows = vnode.state.summaryRows;
+
+    if (!summaryRows) {
+      summaryRows = [{}];
+    }
+    var headers = Object.keys(summaryRows[0])
+    var summaryTable = m("table.table", [
+      m("thead",
+        m("tr", headers.map(function(d) {
+          if (d == "_group_id") {
+            return m("th", "")
+          }
+          return m("th", d)
+        }))
+      ),
+      m("tbody", summaryRows.map(function(row) {
+        return m("tr", Object.keys(row).map(function(k) {
+          if (k == "_group_id") {
+            return m("td", m("div",
+              {
+                style: {
+                  backgroundColor: groupIDToColorString(row[k]),
+                  height: "1.5rem",
+                  width: "3px",
+                  marginRight: "5px"
+                }
+              },
+              ""))
+          }
+          return m("td", row[k])
+        }))
+      }))
+    ])
+
     return m("div", {style: "width: 100%;"}, [
 
       // Start timestamp field
@@ -208,12 +254,15 @@ var ChartContainer = {
           vnode.state.query = v;
           vnode.state.refresh();
         }),
-        size: 60,
+        size: 120,
         value: vnode.state.query
       }),
 
       // Charts
-      chartComponents
+      chartComponents,
+
+      // Summary table
+      summaryTable
     ]);
   }
 };

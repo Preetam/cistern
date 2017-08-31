@@ -262,7 +262,11 @@ CursorLoop:
 	if len(desc.OrderBy) != 0 {
 		orderByColumns := []string{}
 		for _, desc := range desc.OrderBy {
-			orderByColumns = append(orderByColumns, desc.Name) // TODO: support aggregates on grouped columns
+			name := desc.Name
+			if desc.Aggregate != "" {
+				name = desc.Aggregate + "(" + name + ")"
+			}
+			orderByColumns = append(orderByColumns, name)
 		}
 		var ordering sort.Interface = OrderBy{
 			columns: orderByColumns,
