@@ -57,13 +57,13 @@ func TestParse(t *testing.T) {
 			},
 		},
 		{
-			query: "SELECT sum(bytes) LIMIT 1 POINT SIZE 5",
+			query: "SELECT sum(bytes) LIMIT 1 POINT SIZE 5s",
 			expected: &Desc{
 				Columns: []ColumnDesc{
 					{Aggregate: "sum", Name: "bytes"},
 				},
 				Limit:     1,
-				PointSize: 5,
+				PointSize: 5000000000,
 			},
 		},
 		{
@@ -88,7 +88,7 @@ func TestParse(t *testing.T) {
 			},
 		},
 		{
-			query: "select	sum(bytes) \n group by source_addr, dest_addr filter a neq \"3\" (b eq 4.3)(a eq 1) order by source_addr limit 100 point size 1",
+			query: "select	sum(bytes) \n group by source_addr, dest_addr filter a neq \"3\" (b eq 4.3)(a eq 1) order by source_addr limit 100 point size 1h",
 			expected: &Desc{
 				Columns: []ColumnDesc{
 					{Aggregate: "sum", Name: "bytes"},
@@ -106,7 +106,7 @@ func TestParse(t *testing.T) {
 					{Name: "source_addr"},
 				},
 				Limit:     100,
-				PointSize: 1,
+				PointSize: 3600000000000,
 			},
 		},
 		{

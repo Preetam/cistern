@@ -33,7 +33,7 @@ LimitExpr <-
 
 PointSizeExpr <-
   "POINT SIZE" _
-  < Unsigned > { p.SetPointSize(text) }
+  < Duration > { p.SetPointSize(text) }
 
 #### Columns
 
@@ -141,6 +141,10 @@ Integer
 Float <-
   Integer ('.' Unsigned)?
   ( ('e' / 'E' ) Integer )?
+
+Duration <-
+  Integer ('.' Unsigned)?
+  ( 'ns' / 'us' / 'µs' / 'ms' / 's' / 'm' / 'h')
 
 #### Identifiers
 
