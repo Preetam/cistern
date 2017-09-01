@@ -25,8 +25,13 @@ var ChartState = function(width, height, start, end, data, name, brushEnd) {
   this.brushEnd = brushEnd
   for (var i in data.lines) {
     var lineData = data.lines[i];
+    if (lineData.length == 1) {
+      // Only one point, so skip it.
+      continue
+    }
     for (var j in lineData) {
       if (lineData[j].y > this.maxVal) {
+        console.log("max val", name, i, lineData[j].y)
         this.maxVal = lineData[j].y;
       }
     }
@@ -57,7 +62,7 @@ var Chart = function(chartState) {
           return y(d.y);
         });
         var color = groupIDToColorString(i);
-        d3.select(chart).select(".lineGroup").append("path").attr("d", line(lineData)).attr("fill", "none").attr("stroke", color).attr("stroke-width", "2px");
+        d3.select(chart).select(".lineGroup").append("path").attr("d", line(lineData)).attr("fill", "none").attr("stroke", color).attr("stroke-width", "1px");
       }
       // Draw axes
       d3.select(chart).select(".y-axis").attr("transform", "translate(" + (margin - 20) + ", 0)").call(yAxis);
@@ -149,7 +154,7 @@ var ChartContainer = {
 
         this.chartStates = {};
         for (var i in chartData) {
-          this.chartStates[i] = new ChartState(200, 200, new Date(data.query.time_range.start), new Date(data.query.time_range.end), {
+          this.chartStates[i] = new ChartState(300, 300, new Date(data.query.time_range.start), new Date(data.query.time_range.end), {
             lines: chartData[i]
           }, i, this.brushEnd);
         }

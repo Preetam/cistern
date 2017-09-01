@@ -52,6 +52,26 @@ func service() *siesta.Service {
 		queryDesc.TimeRange.Start = time.Unix(*start, 0)
 		queryDesc.TimeRange.End = time.Unix(*end, 0)
 
+		if queryDesc.PointSize > 0 {
+			// Round off timestamps
+			queryDesc.TimeRange.Start = queryDesc.TimeRange.Start.Truncate(time.Duration(queryDesc.PointSize * 1000))
+			queryDesc.TimeRange.End = queryDesc.TimeRange.End.Truncate(time.Duration(queryDesc.PointSize * 1000))
+		}
+
+		log.Println(queryDesc.TimeRange)
+
+		for i, filter := range queryDesc.Filters {
+			var v interface{}
+			err := json.Unmarshal([]byte(filter.Value.(json.RawMessage)), &v)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				log.Println(err)
+				return
+			}
+			filter.Value = v
+			queryDesc.Filters[i] = filter
+		}
+
 		result, err := collection.Query(*queryDesc)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
