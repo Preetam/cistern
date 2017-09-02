@@ -105,6 +105,16 @@ var Chart = function(chartState) {
 
 var ChartContainer = {
   oninit: function(vnode) {
+
+    var queryString = m.parseQueryString(window.location.search.replace(/^[?]/, ''))
+    var start = new Date(), end = new Date();
+    if (queryString.start) {
+      start = new Date(queryString.start)
+    }
+    if (queryString.end) {
+      end = new Date(queryString.end)
+    }
+
     var data = {
       series: [],
       query: {
@@ -114,13 +124,15 @@ var ChartContainer = {
         }
       }
     };
-    vnode.state.start = data.query.time_range.start;
-    vnode.state.end = data.query.time_range.end;
+    vnode.state.start = start;
+    vnode.state.end = end;
+    vnode.state.query = queryString.query || "";
 
     vnode.state.brushEnd = function(start, end) {
       this.start = start
       this.end = end
       this.refresh()
+      this.updateURL()
     }.bind(vnode.state)
 
     vnode.state.refresh = function() {
@@ -166,6 +178,16 @@ var ChartContainer = {
         console.log(this.chartStates)
       }.bind(this)
 
+      vnode.state.updateURL = function() {
+        var queryString = m.parseQueryString(window.location.search.replace(/^[?]/, ''))
+        queryString.start = this.start.toJSON()
+        queryString.end = this.end.toJSON()
+        queryString.query = this.query
+
+        var newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?' + m.buildQueryString(queryString);
+        window.history.pushState({path: newurl}, '', newurl);
+      }.bind(this)
+
       m.request({
         method: "POST",
         url: "http://localhost:2020/collections/flowlogs/query?" +
@@ -174,6 +196,12 @@ var ChartContainer = {
           "query=" + encodeURIComponent(this.query)
       }).then(process);
     }.bind(vnode.state);
+
+    window.onpopstate = (function(e) {
+      this.refresh()
+    }).bind(this);
+
+    vnode.state.refresh()
   },
   view: function(vnode) {
     var chartComponents = [];
@@ -225,6 +253,7 @@ var ChartContainer = {
           if (!isNaN(d.getTime())) {
             vnode.state.start = new Date(v);
             vnode.state.refresh();
+            vnode.state.updateURL();
             return;
             for (var i in vnode.state.chartStates) {
               vnode.state.chartStates[i].start = new Date(v);
@@ -242,6 +271,7 @@ var ChartContainer = {
           if (!isNaN(d.getTime())) {
             vnode.state.end = new Date(v);
             vnode.state.refresh();
+            vnode.state.updateURL();
             return;
             for (var i in vnode.state.chartStates) {
               vnode.state.chartStates[i].end = new Date(v);
@@ -258,6 +288,7 @@ var ChartContainer = {
         onchange: m.withAttr("value", function(v) {
           vnode.state.query = v;
           vnode.state.refresh();
+          vnode.state.updateURL();
         }),
         size: 120,
         value: vnode.state.query
