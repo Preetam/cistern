@@ -2,7 +2,7 @@ machine:
   node:
     version: 8.0.0
 
-build:
+compile:
   override:
     - go build && go build ./cmd/cistern-cli && mv cistern $CIRCLE_ARTIFACTS && mv cistern-cli $CIRCLE_ARTIFACTS
     - cd ui && npm i && npm run build && tar czvf static.tar.gz static && mv static.tar.gz $CIRCLE_ARTIFACTS
