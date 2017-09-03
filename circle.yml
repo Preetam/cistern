@@ -5,7 +5,7 @@ machine:
 dependencies:
   pre:
     - mkdir -p ~/.go_workspace/src/github.com/Cistern
-    - ln -s ~/$CIRCLE_PROJECT_REPONAME ~/.go_workspace/src/github.com/Cistern
+    - ln -s ~/$CIRCLE_PROJECT_REPONAME ~/.go_workspace/src/github.com/Cistern/$CIRCLE_PROJECT_REPONAME
 
 compile:
   override:
