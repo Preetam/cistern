@@ -43,11 +43,13 @@ var ChartContainer = {
         };
         var charts = [];
         var chartData = {};
-        for (var i in data.query.columns) {
-          var column = data.query.columns[i];
-          var name = columnToName(column);
-          charts.push(name);
-          chartData[name] = {};
+        if (data.query.point_size > 0) {
+          for (var i in data.query.columns) {
+            var column = data.query.columns[i];
+            var name = columnToName(column);
+            charts.push(name);
+            chartData[name] = {};
+          }
         }
         for (var i in data.series) {
           var point = data.series[i];
@@ -63,13 +65,18 @@ var ChartContainer = {
             });
           }
         }
-        console.log(JSON.stringify(chartData));
 
         this.chartStates = {};
         for (var i in chartData) {
-          this.chartStates[i] = new ChartState(300, 300, new Date(data.query.time_range.start), new Date(data.query.time_range.end), {
-            lines: chartData[i]
-          }, i, this.brushEnd);
+          this.chartStates[i] = new ChartState(
+            100,
+            200,
+            new Date(data.query.time_range.start),
+            new Date(data.query.time_range.end),
+            { lines: chartData[i] },
+            i,
+            this.brushEnd
+          );
         }
 
         this.summaryRows = data.summary;
@@ -112,94 +119,121 @@ var ChartContainer = {
     }
 
     var summaryRows = vnode.state.summaryRows;
-
-    if (!summaryRows) {
-      summaryRows = [{}];
+    var summaryTable;
+    if (summaryRows) {
+      var headers = Object.keys(summaryRows[0])
+      summaryTable = m("table.table", [
+        m("thead",
+          m("tr", headers.map(function(d) {
+            if (d == "_group_id") {
+              return m("th", "")
+            }
+            return m("th", d)
+          }))
+        ),
+        m("tbody", summaryRows.map(function(row) {
+          return m("tr", Object.keys(row).map(function(k) {
+            if (k == "_group_id") {
+              return m("td", m("div",
+                {
+                  style: {
+                    backgroundColor: groupColor(row[k]),
+                    height: "1.5rem",
+                    width: "3px",
+                    marginRight: "5px"
+                  }
+                },
+                ""))
+            }
+            return m("td", row[k])
+          }))
+        }))
+      ])
     }
-    var headers = Object.keys(summaryRows[0])
-    var summaryTable = m("table.table", [
-      m("thead",
-        m("tr", headers.map(function(d) {
-          if (d == "_group_id") {
-            return m("th", "")
-          }
-          return m("th", d)
-        }))
-      ),
-      m("tbody", summaryRows.map(function(row) {
-        return m("tr", Object.keys(row).map(function(k) {
-          if (k == "_group_id") {
-            return m("td", m("div",
-              {
-                style: {
-                  backgroundColor: groupColor(row[k]),
-                  height: "1.5rem",
-                  width: "3px",
-                  marginRight: "5px"
-                }
-              },
-              ""))
-          }
-          return m("td", row[k])
-        }))
-      }))
-    ])
 
-    return m("div", {style: "width: 100%;"}, [
+    var resultsComponents = [];
 
-      // Start timestamp field
-      m("input", {
-        onchange: m.withAttr("value", function(v) {
-          var d = new Date(v);
-          if (!isNaN(d.getTime())) {
-            vnode.state.start = new Date(v);
-            vnode.state.refresh();
-            vnode.state.updateURL();
-            return;
-            for (var i in vnode.state.chartStates) {
-              vnode.state.chartStates[i].start = new Date(v);
-            }
-          }
-        }),
-        size: 30,
-        value: vnode.state.start.toJSON()
-      }),
+    if (chartComponents.length > 0) {
+      resultsComponents.push(m("div.row", chartComponents));
+    }
 
-      // End timestamp field
-      m("input", {
-        onchange: m.withAttr("value", function(v) {
-          var d = new Date(v);
-          if (!isNaN(d.getTime())) {
-            vnode.state.end = new Date(v);
-            vnode.state.refresh();
-            vnode.state.updateURL();
-            return;
-            for (var i in vnode.state.chartStates) {
-              vnode.state.chartStates[i].end = new Date(v);
-            }
-          }
-        }),
-        size: 30,
-        value: vnode.state.end.toJSON()
-      }),
+    if (summaryRows) {
+      resultsComponents.push(m("div", {className: "row summary-table"}, summaryTable));
+    }
 
-      // Query field
-      m("input", {
-        style: {display: "block"},
-        onchange: m.withAttr("value", function(v) {
-          vnode.state.query = v;
+    var startInputField = m("input.form-control", {
+      onchange: m.withAttr("value", function(v) {
+        var d = new Date(v);
+        if (!isNaN(d.getTime())) {
+          vnode.state.start = new Date(v);
           vnode.state.refresh();
           vnode.state.updateURL();
-        }),
-        size: 120,
-        value: vnode.state.query
+          return;
+          for (var i in vnode.state.chartStates) {
+            vnode.state.chartStates[i].start = new Date(v);
+          }
+        }
       }),
+      size: 30,
+      id: "query-start",
+      value: vnode.state.start.toJSON()
+    });
 
-      // Charts
-      chartComponents,
+    var endInputField = m("input.form-control", {
+      onchange: m.withAttr("value", function(v) {
+        var d = new Date(v);
+        if (!isNaN(d.getTime())) {
+          vnode.state.end = new Date(v);
+          vnode.state.refresh();
+          vnode.state.updateURL();
+          return;
+          for (var i in vnode.state.chartStates) {
+            vnode.state.chartStates[i].end = new Date(v);
+          }
+        }
+      }),
+      size: 30,
+      id: "query-end",
+      value: vnode.state.end.toJSON()
+    });
 
-      // Summary table
-      summaryTable
+    var queryField = m("textarea.form-control", {
+      onchange: m.withAttr("value", function(v) {
+        vnode.state.query = v;
+        vnode.state.refresh();
+        vnode.state.updateURL();
+      }),
+      size: 120,
+      id: "query-text",
+      value: vnode.state.query
+    });
+
+    var inputs = [
+      m("div.row", [
+        m("div.col-3", [
+          m("label", {for: "query-start"}, "Start timestamp"),
+          startInputField
+        ]),
+        m("div.col-3", [
+          m("label", {for: "query-end"}, "End timestamp"),
+          endInputField
+        ]),
+      ]),
+      m("div.row", [
+        m("div.col-12", [
+          m("label", {for: "query-text"}, "Query"),
+          queryField
+        ])
+      ])
+    ]
+
+    return m("div", {style: "width: 100%;"}, [
+      inputs,
+
+      m("div", resultsComponents),
+
+      // Tooltip element
+      m("div.chart-tooltip")
     ]);
   }
 };
