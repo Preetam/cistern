@@ -14,4 +14,4 @@ compile:
 
 test:
   override:
-    - go test $(go list ./... | grep -v /vendor/)
+    - cd ~/.go_workspace/src/github.com/Cistern/cistern && go test $(go list ./... | grep -v /vendor/)
