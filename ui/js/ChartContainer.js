@@ -80,10 +80,10 @@ var ChartContainer = {
         }
 
         this.summaryRows = data.summary;
+        this.events = data.events;
         this.start = new Date(data.query.time_range.start);
         this.end = new Date(data.query.time_range.end);
 
-        console.log(this.chartStates)
       }.bind(this)
 
       vnode.state.updateURL = function() {
@@ -151,14 +151,47 @@ var ChartContainer = {
       ])
     }
 
+    var events = vnode.state.events;
+    var eventsTable;
+    if (events) {
+      var headers = Object.keys(events[0])
+      eventsTable = m("table.table", [
+        m("thead",
+          m("tr", headers.map(function(d) {
+            if (d == "_id") {return}
+            return m("th", d)
+          }))
+        ),
+        m("tbody", events.map(function(row) {
+          return m("tr", Object.keys(row).map(function(k) {
+            if (k == "_id") {return}
+            return m("td", row[k])
+          }))
+        }))
+      ])
+    }
+
     var resultsComponents = [];
 
     if (chartComponents.length > 0) {
-      resultsComponents.push(m("div.row", chartComponents));
+      resultsComponents.push(m("div.row", [
+        m("h5", "Series"),
+        chartComponents
+      ]));
     }
 
     if (summaryRows) {
-      resultsComponents.push(m("div", {className: "row summary-table"}, summaryTable));
+      resultsComponents.push(m("div", {className: "row summary-table"}, [
+        m("h5", "Summary"),
+        summaryTable
+      ]));
+    }
+
+    if (events) {
+      resultsComponents.push(m("div", {className: "row events-table"}, [
+        m("h5", "Events"),
+        eventsTable
+      ]));
     }
 
     var startInputField = m("input.form-control", {

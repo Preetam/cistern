@@ -3,6 +3,10 @@ body {
   padding: 1rem;
 }
 
+.row {
+  margin-top: 1rem;
+}
+
 .chart {
   margin: 1rem 0 1rem 0;
   padding: 0.25rem;
@@ -30,4 +34,8 @@ body {
 
 .summary-table {
   max-width: 400px;
+}
+
+.events-table {
+  font-size: 10px;
 }
