@@ -100,7 +100,7 @@ var ChartContainer = {
 
       m.request({
         method: "POST",
-        url: "http://localhost:2020/collections/" + this.collection + "/query?" +
+        url: "/api/collections/" + this.collection + "/query?" +
           "start=" + Math.floor(this.start.getTime()/1000) + "&" +
           "end=" + Math.floor(this.end.getTime()/1000) + "&" +
           "query=" + encodeURIComponent(this.query)

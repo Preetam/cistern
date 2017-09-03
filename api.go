@@ -11,7 +11,7 @@ import (
 )
 
 func service() *siesta.Service {
-	service := siesta.NewService("/")
+	service := siesta.NewService("/api")
 	service.Route("OPTIONS", "/collections/:collection/query", "preflight request", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Headers", r.Header.Get("Access-Control-Request-Headers"))
