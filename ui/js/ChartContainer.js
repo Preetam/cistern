@@ -28,6 +28,7 @@ var ChartContainer = {
     vnode.state.start = start;
     vnode.state.end = end;
     vnode.state.query = queryString.query || "";
+    vnode.state.collection = queryString.collection || "";
 
     vnode.state.brushEnd = function(start, end) {
       this.start = start
@@ -91,6 +92,7 @@ var ChartContainer = {
         queryString.start = this.start.toJSON()
         queryString.end = this.end.toJSON()
         queryString.query = this.query
+        queryString.collection = this.collection
 
         var newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?' + m.buildQueryString(queryString);
         window.history.pushState({path: newurl}, '', newurl);
@@ -98,7 +100,7 @@ var ChartContainer = {
 
       m.request({
         method: "POST",
-        url: "http://localhost:2020/collections/flowlogs/query?" +
+        url: "http://localhost:2020/collections/" + this.collection + "/query?" +
           "start=" + Math.floor(this.start.getTime()/1000) + "&" +
           "end=" + Math.floor(this.end.getTime()/1000) + "&" +
           "query=" + encodeURIComponent(this.query)
@@ -107,7 +109,7 @@ var ChartContainer = {
 
     window.onpopstate = (function(e) {
       this.refresh()
-    }).bind(this);
+    }).bind(vnode.state);
 
     vnode.state.refresh()
   },
@@ -194,6 +196,17 @@ var ChartContainer = {
       ]));
     }
 
+    var collectionInputField = m("input.form-control", {
+      onchange: m.withAttr("value", function(v) {
+        vnode.state.collection = v;
+        vnode.state.refresh();
+        vnode.state.updateURL();
+      }),
+      size: 30,
+      id: "query-collection",
+      value: vnode.state.collection
+    })
+
     var startInputField = m("input.form-control", {
       onchange: m.withAttr("value", function(v) {
         var d = new Date(v);
@@ -243,6 +256,10 @@ var ChartContainer = {
 
     var inputs = [
       m("div.row", [
+        m("div.col-3", [
+          m("label", {for: "query-collection"}, "Collection"),
+          collectionInputField
+        ]),
         m("div.col-3", [
           m("label", {for: "query-start"}, "Start timestamp"),
           startInputField
