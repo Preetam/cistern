@@ -86,11 +86,15 @@ var Chart = function(chartState) {
             return getValue(b) - getValue(a);
           });
 
+          console.log(d3.event.pageX, d3.event.pageY)
+
           var tooltip = d3.select(document).select(".chart-tooltip");
           tooltip.html(hoverDate)
             .style("position", "absolute")
             .style('display', 'block')
-            .style('left', d3.event.pageX + "px")
+            .style('margin', '0')
+            .style('padding ', '0')
+            .style('left', d3.event.pageX+10 + "px")
             .style('top', d3.event.pageY + "px")
             .selectAll()
             .data(tooltipData)
