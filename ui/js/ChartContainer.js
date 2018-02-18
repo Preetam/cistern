@@ -154,7 +154,7 @@ var ChartContainer = {
     var eventsTable;
     if (events) {
       var headers = Object.keys(events[0])
-      eventsTable = m("table.table", [
+      eventsTable = m("table.pure-table", [
         m("thead",
           m("tr", headers.map(function(d) {
             if (d == "_id") {return}
